@@ -1,0 +1,119 @@
+name: Build and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g. 1.2.0)"
+        required: false
+        default: "1.0.0"
+        type: string
+
+env:
+  TROJAN_URL: https://github.com/trojan-gfw/trojan/releases/download/v1.16.0/trojan-1.16.0-win.zip
+  PROXIFYRE_URL: https://github.com/wiresock/proxifyre/releases/download/v2.2.0/ProxiFyre-v2.2.0-x64-signed.zip
+  NDISAPI_URL: https://github.com/wiresock/ndisapi/releases/download/v3.6.2.1/Windows.Packet.Filter.3.6.2.1.x64.msi
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      # ── Tool downloads ────────────────────────────────────────────────────
+      - name: Download Trojan
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri $env:TROJAN_URL -OutFile trojan.zip
+          Expand-Archive -Path trojan.zip -DestinationPath trojan_tmp
+          $items = Get-ChildItem trojan_tmp
+          if ($items.Count -eq 1 -and $items[0].PSIsContainer) {
+            Move-Item "$($items[0].FullName)\*" trojan4win/Tools/trojan/
+          } else {
+            Move-Item trojan_tmp\* trojan4win/Tools/trojan/
+          }
+          Remove-Item trojan.zip, trojan_tmp -Recurse -Force
+
+      - name: Download ProxiFyre
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri $env:PROXIFYRE_URL -OutFile proxifyre.zip
+          Expand-Archive -Path proxifyre.zip -DestinationPath proxifyre_tmp
+          $items = Get-ChildItem proxifyre_tmp
+          if ($items.Count -eq 1 -and $items[0].PSIsContainer) {
+            Move-Item "$($items[0].FullName)\*" trojan4win/Tools/proxifyre/
+          } else {
+            Move-Item proxifyre_tmp\* trojan4win/Tools/proxifyre/
+          }
+          Remove-Item proxifyre.zip, proxifyre_tmp -Recurse -Force
+
+      - name: Download NDISAPI driver
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri $env:NDISAPI_URL `
+            -OutFile trojan4win/Tools/ndisapi/Windows.Packet.Filter.3.6.2.1.x64.msi
+
+      - name: Verify tool binaries
+        shell: pwsh
+        run: |
+          $missing = @()
+          if (-not (Test-Path 'trojan4win/Tools/trojan/trojan.exe'))       { $missing += 'trojan.exe' }
+          if (-not (Test-Path 'trojan4win/Tools/proxifyre/ProxiFyre.exe')) { $missing += 'ProxiFyre.exe' }
+          if ($missing.Count -gt 0) {
+            Write-Error "Missing tool binaries after download: $($missing -join ', ')"
+            exit 1
+          }
+          Write-Host "All tool binaries verified."
+
+      # ── Build + Test ──────────────────────────────────────────────────────
+      - name: Restore
+        run: dotnet restore trojan4win.slnx
+
+      - name: Build
+        run: dotnet build trojan4win.slnx -c Release --no-restore
+
+      - name: Test
+        run: dotnet test trojan4win.Tests/trojan4win.Tests.csproj -c Release --no-build --logger "console;verbosity=normal"
+
+      - name: Publish
+        run: dotnet publish trojan4win/trojan4win.csproj -c Release -r win-x64 --self-contained --no-restore
+
+      # ── Inno Setup packaging ──────────────────────────────────────────────
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Add Inno Setup to PATH
+        shell: pwsh
+        run: |
+          echo "C:\Program Files (x86)\Inno Setup 6" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Compile installer
+        shell: pwsh
+        run: |
+          iscc installer.iss /DMyAppVersion=${{ github.event.inputs.version }}
+
+      - name: Verify installer output
+        shell: pwsh
+        run: |
+          $installer = "installer_output/trojan4win_Setup_${{ github.event.inputs.version }}.exe"
+          if (-not (Test-Path $installer)) {
+            Write-Error "Installer not found at: $installer"
+            exit 1
+          }
+          Write-Host "Installer verified: $installer"
+
+      # ── GitHub Release ────────────────────────────────────────────────────
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.event.inputs.version }}
+          name: trojan4win v${{ github.event.inputs.version }}
+          generate_release_notes: true
+          files: installer_output/trojan4win_Setup_${{ github.event.inputs.version }}.exe

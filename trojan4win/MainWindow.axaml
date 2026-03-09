@@ -1,0 +1,647 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="using:trojan4win.ViewModels"
+        xmlns:conv="using:trojan4win.Converters"
+        mc:Ignorable="d" d:DesignWidth="680" d:DesignHeight="520"
+        x:Class="trojan4win.MainWindow"
+        Icon="avares://trojan4win/app.ico"
+        Title="trojan4win"
+        Width="580" Height="520"
+        MinWidth="580" MinHeight="420"
+        x:DataType="vm:MainViewModel"
+        Background="#1E1E2E">
+
+    <Window.Resources>
+        <conv:BytesToStringConverter x:Key="BytesToStr"/>
+        <conv:SpeedToStringConverter x:Key="SpeedToStr"/>
+        <conv:TotalTimeConverter x:Key="TotalTimeConv"/>
+        <conv:PingToStringConverter x:Key="PingToStr"/>
+        <conv:PageEqualsConverter x:Key="PageEquals"/>
+        <conv:InverseBoolConverter x:Key="InvBool"/>
+        <conv:StringNotEmptyConverter x:Key="StrNotEmpty"/>
+        <conv:BoolToPasswordCharConverter x:Key="BoolToPasswordChar"/>
+    </Window.Resources>
+
+    <Window.Styles>
+        <Style Selector="Button.nav">
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="CornerRadius" Value="6"/>
+        </Style>
+        <Style Selector="Button.nav:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#313244"/>
+        </Style>
+        <Style Selector="Button.nav.active /template/ ContentPresenter">
+            <Setter Property="Background" Value="#313244"/>
+        </Style>
+
+        <!-- Green button hover -->
+        <Style Selector="Button.btn-green:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#2ECC71"/>
+        </Style>
+        <Style Selector="Button.btn-green:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="#219A52"/>
+        </Style>
+        <!-- Red button hover -->
+        <Style Selector="Button.btn-red:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#CF5050"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <Style Selector="Button.btn-red:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="#A03636"/>
+            <Setter Property="Foreground" Value="White"/>
+        </Style>
+        <!-- Danger (muted) button hover -->
+        <Style Selector="Button.btn-danger:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#D08A9E"/>
+            <Setter Property="Foreground" Value="#1E1E2E"/>
+        </Style>
+        <Style Selector="Button.btn-danger:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="#A86478"/>
+            <Setter Property="Foreground" Value="#1E1E2E"/>
+        </Style>
+
+        <!-- Server list: remove default selection rectangle, highlight via item background -->
+        <Style Selector="ListBox.serverlist ListBoxItem">
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+        </Style>
+        <Style Selector="ListBox.serverlist Border.serverItem">
+            <Setter Property="Background" Value="#45475A"/>
+        </Style>
+        <Style Selector="ListBox.serverlist ListBoxItem /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="ListBox.serverlist ListBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="ListBox.serverlist ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="ListBox.serverlist ListBoxItem:selected:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="ListBox.serverlist ListBoxItem:selected:focus /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="ListBox.serverlist ListBoxItem:selected:focus-within /template/ ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="ListBox.serverlist ListBoxItem:selected Border.serverItem">
+            <Setter Property="Background" Value="#585B70"/>
+        </Style>
+        <Style Selector="ListBox.serverlist ListBoxItem:pointerover:not(:selected) Border.serverItem">
+            <Setter Property="Background" Value="#505264"/>
+        </Style>
+
+        <!-- Log TextBox: always look active regardless of focus state -->
+        <Style Selector="TextBox.logbox">
+            <Setter Property="Foreground" Value="#A6ADC8"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+        <Style Selector="TextBox.logbox /template/ Border">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style Selector="TextBox.logbox:pointerover /template/ Border">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style Selector="TextBox.logbox:focus /template/ Border">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+        <Style Selector="TextBox.logbox:focus-within /template/ Border">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+
+        <!-- Caption buttons: softer hover -->
+        <Style Selector="CaptionButtons /template/ Button:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#313244"/>
+        </Style>
+        <Style Selector="CaptionButtons /template/ Button:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="#45475A"/>
+        </Style>
+        <Style Selector="CaptionButtons /template/ Button#PART_CloseButton:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#C47A8E"/>
+        </Style>
+        <Style Selector="CaptionButtons /template/ Button#PART_CloseButton:pressed /template/ ContentPresenter">
+            <Setter Property="Background" Value="#A86478"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid ColumnDefinitions="52,*" RowDefinitions="36,*">
+        <!-- Full-height sidebar background -->
+        <Border Grid.Column="0" Grid.RowSpan="2" Background="#181825"/>
+
+        <!-- App icon in sidebar title bar area -->
+        <Image Grid.Column="0" Grid.Row="0"
+               Source="avares://trojan4win/app.ico"
+               Width="20" Height="20"
+               HorizontalAlignment="Center" VerticalAlignment="Center"
+               IsHitTestVisible="False"/>
+
+        <!-- Title bar area -->
+        <Panel Grid.Column="1" Grid.Row="0" IsHitTestVisible="False">
+            <TextBlock Text="trojan4win" Foreground="#CDD6F4"
+                       VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold" Margin="12,0"/>
+        </Panel>
+
+        <!-- Sidebar nav buttons -->
+        <StackPanel Grid.Column="0" Grid.Row="1" Spacing="2" Margin="0,8,0,0" VerticalAlignment="Top">
+                <!-- Home -->
+                <Button Classes="nav"
+                        Classes.active="{Binding CurrentPage, Converter={StaticResource PageEquals}, ConverterParameter=home}"
+                        Command="{Binding NavigateToCommand}" CommandParameter="home"
+                        ToolTip.Tip="Home">
+                    <PathIcon Width="18" Height="18" Foreground="#CDD6F4"
+                              Data="M21.6062 5.85517C23.0048 4.71494 24.9952 4.71494 26.3938 5.85517L39.5688 16.5966C40.4736 17.3342 41 18.4492 41 19.628V39.1134C41 41.2599 39.2875 43 37.175 43H32.075C29.9625 43 28.25 41.2599 28.25 39.1134V29.7492C28.25 29.0337 27.6792 28.4536 26.975 28.4536H21.025C20.3208 28.4536 19.75 29.0337 19.75 29.7492V39.1134C19.75 41.2599 18.0375 43 15.925 43H10.825C8.71251 43 7 41.2599 7 39.1134V19.628C7 18.4493 7.52645 17.3342 8.43124 16.5966L21.6062 5.85517ZM24.7979 7.87612C24.3317 7.49604 23.6683 7.49604 23.2021 7.87612L10.0271 18.6175C9.72548 18.8634 9.55 19.2351 9.55 19.628V39.1134C9.55 39.8289 10.1208 40.4089 10.825 40.4089H15.925C16.6292 40.4089 17.2 39.8289 17.2 39.1134V29.7492C17.2 27.6027 18.9125 25.8626 21.025 25.8626H26.975C29.0875 25.8626 30.8 27.6027 30.8 29.7492V39.1134C30.8 39.8289 31.3708 40.4089 32.075 40.4089H37.175C37.8792 40.4089 38.45 39.8289 38.45 39.1134V19.628C38.45 19.2351 38.2745 18.8634 37.9729 18.6175L24.7979 7.87612Z"/>
+                </Button>
+                <!-- Stats -->
+                <Button Classes="nav"
+                        Classes.active="{Binding CurrentPage, Converter={StaticResource PageEquals}, ConverterParameter=stats}"
+                        Command="{Binding NavigateToCommand}" CommandParameter="stats"
+                        ToolTip.Tip="Statistics">
+                    <PathIcon Width="18" Height="18" Foreground="#CDD6F4"
+                              Data="M18.25,2.99669241 C19.7687831,2.99669241 21,4.22790935 21,5.74669241 L21,18.2466924 C21,19.7654755 19.7687831,20.9966924 18.25,20.9966924 L5.75,20.9966924 C4.23121694,20.9966924 3,19.7654755 3,18.2466924 L3,5.74669241 C3,4.22790935 4.23121694,2.99669241 5.75,2.99669241 L18.25,2.99669241 Z M18.25,4.49669241 L5.75,4.49669241 C5.05964406,4.49669241 4.5,5.05633647 4.5,5.74669241 L4.5,18.2466924 C4.5,18.9370483 5.05964406,19.4966924 5.75,19.4966924 L18.25,19.4966924 C18.9403559,19.4966924 19.5,18.9370483 19.5,18.2466924 L19.5,5.74669241 C19.5,5.05633647 18.9403559,4.49669241 18.25,4.49669241 Z M7.75,9 C8.12969577,9 8.44349096,9.28094139 8.49315338,9.64544382 L8.5,9.74677704 L8.5,16.253223 C8.5,16.6656565 8.16421356,17 7.75,17 C7.37030423,17 7.05650904,16.7190586 7.00684662,16.3545562 L7,16.253223 L7,9.74677704 C7,9.33434347 7.33578644,9 7.75,9 Z M16.25,7 C16.6296958,7 16.943491,7.27440664 16.9931534,7.63043068 L17,7.72940687 L17,16.2705931 C17,16.6734334 16.6642136,17 16.25,17 C15.8703042,17 15.556509,16.7255934 15.5068466,16.3695693 L15.5,16.2705931 L15.5,7.72940687 C15.5,7.32656658 15.8357864,7 16.25,7 Z M11.9751026,11.9966924 C12.3458372,11.9931292 12.6549478,12.2633683 12.7069687,12.6174012 L12.7146353,12.7158904 L12.7499635,16.2632174 C12.7539584,16.664342 12.4293352,16.9927296 12.0248974,16.9967635 C11.6541628,17.0003267 11.3450522,16.7300876 11.2930313,16.3760546 L11.2853647,16.2775655 L11.2500365,12.7302385 C11.2460416,12.3291139 11.5706648,12.0007262 11.9751026,11.9966924 Z"/>
+                </Button>
+                <!-- Proxy -->
+                <Button Classes="nav"
+                        Classes.active="{Binding CurrentPage, Converter={StaticResource PageEquals}, ConverterParameter=proxy}"
+                        Command="{Binding NavigateToCommand}" CommandParameter="proxy"
+                        ToolTip.Tip="Proxy Settings">
+                    <PathIcon Width="18" Height="18" Foreground="#CDD6F4"
+                              Data="M14,2 C20.627417,2 26,7.372583 26,14 C26,20.627417 20.627417,26 14,26 C7.372583,26 2,20.627417 2,14 C2,7.372583 7.372583,2 14,2 Z M14,3.5 C8.20101013,3.5 3.5,8.20101013 3.5,14 C3.5,19.7989899 8.20101013,24.5 14,24.5 C19.7989899,24.5 24.5,19.7989899 24.5,14 C24.5,8.20101013 19.7989899,3.5 14,3.5 Z M14,8 C14.4142136,8 14.75,8.33578644 14.75,8.75 L14.75,13.25 L19.25,13.25 C19.6642136,13.25 20,13.5857864 20,14 C20,14.4142136 19.6642136,14.75 19.25,14.75 L14.75,14.75 L14.75,19.25 C14.75,19.6642136 14.4142136,20 14,20 C13.5857864,20 13.25,19.6642136 13.25,19.25 L13.25,14.75 L8.75,14.75 C8.33578644,14.75 8,14.4142136 8,14 C8,13.5857864 8.33578644,13.25 8.75,13.25 L13.25,13.25 L13.25,8.75 C13.25,8.33578644 13.5857864,8 14,8 Z"/>
+                </Button>
+                <!-- Logs -->
+                <Button Classes="nav"
+                        Classes.active="{Binding CurrentPage, Converter={StaticResource PageEquals}, ConverterParameter=logs}"
+                        Command="{Binding NavigateToCommand}" CommandParameter="logs"
+                        ToolTip.Tip="Logs">
+                    <PathIcon Width="18" Height="18" Foreground="#CDD6F4"
+                              Data="M17.7499 2.00097C18.9408 2.00097 19.9156 2.92613 19.9947 4.09692L19.9999 4.25097V19.749C19.9999 20.9399 19.0748 21.9147 17.904 21.9938L17.7499 21.999H6.25006C5.0592 21.999 4.08442 21.0739 4.00525 19.9031L4.00006 19.749V4.25097C4.00006 3.0601 4.92522 2.08532 6.09601 2.00616L6.25006 2.00097H17.7499ZM17.7499 3.50097H6.25006C5.87037 3.50097 5.55657 3.78312 5.50691 4.1492L5.50006 4.25097V19.749C5.50006 20.1287 5.78222 20.4425 6.14829 20.4922L6.25006 20.499H17.7499C18.1296 20.499 18.4434 20.2169 18.4931 19.8508L18.4999 19.749V4.25097C18.4999 3.87127 18.2178 3.55748 17.8517 3.50782L17.7499 3.50097Z M7 15.75C7 15.3358 7.33578 15 7.75 15H16.25C16.6642 15 17 15.3358 17 15.75C17 16.1642 16.6642 16.5 16.25 16.5H7.75C7.33578 16.5 7 16.1642 7 15.75Z M7 7.75C7 7.33579 7.33578 7 7.75 7H16.25C16.6642 7 17 7.33579 17 7.75C17 8.16422 16.6642 8.5 16.25 8.5H7.75C7.33578 8.5 7 8.16422 7 7.75Z M7 11.75C7 11.3358 7.33578 11 7.75 11H16.25C16.6642 11 17 11.3358 17 11.75C17 12.1642 16.6642 12.5 16.25 12.5H7.75C7.33578 12.5 7 12.1642 7 11.75Z"/>
+                </Button>
+                <!-- Settings -->
+                <Button Classes="nav"
+                        Classes.active="{Binding CurrentPage, Converter={StaticResource PageEquals}, ConverterParameter=settings}"
+                        Command="{Binding NavigateToCommand}" CommandParameter="settings"
+                        ToolTip.Tip="Settings">
+                    <PathIcon Width="18" Height="18" Foreground="#CDD6F4"
+                              Data="M14 9.50006C11.5147 9.50006 9.5 11.5148 9.5 14.0001C9.5 16.4853 11.5147 18.5001 14 18.5001C15.3488 18.5001 16.559 17.9066 17.3838 16.9666C18.0787 16.1746 18.5 15.1365 18.5 14.0001C18.5 13.5401 18.431 13.0963 18.3028 12.6784C17.7382 10.8381 16.0253 9.50006 14 9.50006ZM11 14.0001C11 12.3432 12.3431 11.0001 14 11.0001C15.6569 11.0001 17 12.3432 17 14.0001C17 15.6569 15.6569 17.0001 14 17.0001C12.3431 17.0001 11 15.6569 11 14.0001Z M21.7093 22.3948L19.9818 21.6364C19.4876 21.4197 18.9071 21.4515 18.44 21.7219C17.9729 21.9924 17.675 22.4693 17.6157 23.0066L17.408 24.8855C17.3651 25.273 17.084 25.5917 16.7055 25.682C14.9263 26.1061 13.0725 26.1061 11.2933 25.682C10.9148 25.5917 10.6336 25.273 10.5908 24.8855L10.3834 23.0093C10.3225 22.4731 10.0112 21.9976 9.54452 21.7281C9.07783 21.4586 8.51117 21.4269 8.01859 21.6424L6.29071 22.4009C5.93281 22.558 5.51493 22.4718 5.24806 22.1859C4.00474 20.8536 3.07924 19.2561 2.54122 17.5137C2.42533 17.1384 2.55922 16.7307 2.8749 16.4977L4.40219 15.3703C4.83721 15.0501 5.09414 14.5415 5.09414 14.0007C5.09414 13.4598 4.83721 12.9512 4.40162 12.6306L2.87529 11.5051C2.55914 11.272 2.42513 10.8638 2.54142 10.4882C3.08038 8.74734 4.00637 7.15163 5.24971 5.82114C5.51684 5.53528 5.93492 5.44941 6.29276 5.60691L8.01296 6.36404C8.50793 6.58168 9.07696 6.54881 9.54617 6.27415C10.0133 6.00264 10.3244 5.52527 10.3844 4.98794L10.5933 3.11017C10.637 2.71803 10.9245 2.39704 11.3089 2.31138C12.19 2.11504 13.0891 2.01071 14.0131 2.00006C14.9147 2.01047 15.8128 2.11485 16.6928 2.31149C17.077 2.39734 17.3643 2.71823 17.4079 3.11017L17.617 4.98937C17.7116 5.85221 18.4387 6.50572 19.3055 6.50663C19.5385 6.507 19.769 6.45838 19.9843 6.36294L21.7048 5.60568C22.0626 5.44818 22.4807 5.53405 22.7478 5.81991C23.9912 7.1504 24.9172 8.74611 25.4561 10.487C25.5723 10.8623 25.4386 11.2703 25.1228 11.5035L23.5978 12.6297C23.1628 12.95 22.9 13.4586 22.9 13.9994C22.9 14.5403 23.1628 15.0489 23.5988 15.3698L25.1251 16.4965C25.441 16.7296 25.5748 17.1376 25.4586 17.5131C24.9198 19.2536 23.9944 20.8492 22.7517 22.1799C22.4849 22.4657 22.0671 22.5518 21.7093 22.3948ZM16.263 22.1966C16.4982 21.4685 16.9889 20.8288 17.6884 20.4238C18.5702 19.9132 19.6536 19.8547 20.5841 20.2627L21.9281 20.8526C22.791 19.8538 23.4593 18.7013 23.8981 17.4552L22.7095 16.5778L22.7086 16.5771C21.898 15.98 21.4 15.0277 21.4 13.9994C21.4 12.9719 21.8974 12.0195 22.7073 11.4227L22.7085 11.4218L23.8957 10.545C23.4567 9.2988 22.7881 8.14636 21.9248 7.1477L20.5922 7.73425L20.5899 7.73527C20.1844 7.91463 19.7472 8.00722 19.3039 8.00663C17.6715 8.00453 16.3046 6.77431 16.1261 5.15465L16.1259 5.15291L15.9635 3.69304C15.3202 3.57328 14.6677 3.50872 14.013 3.50017C13.3389 3.50891 12.6821 3.57367 12.0377 3.69328L11.8751 5.15452C11.7625 6.16272 11.1793 7.05909 10.3019 7.56986C9.41937 8.0856 8.34453 8.14844 7.40869 7.73694L6.07273 7.14893C5.20949 8.14751 4.54092 9.29983 4.10196 10.5459L5.29181 11.4233C6.11115 12.0269 6.59414 12.9837 6.59414 14.0007C6.59414 15.0173 6.11142 15.9742 5.29237 16.5776L4.10161 17.4566C4.54002 18.7044 5.2085 19.8585 6.07205 20.8587L7.41742 20.2682C8.34745 19.8613 9.41573 19.9215 10.2947 20.4292C11.174 20.937 11.7593 21.832 11.8738 22.84L11.8744 22.8445L12.0362 24.3088C13.3326 24.5638 14.6662 24.5638 15.9626 24.3088L16.1247 22.8418C16.1491 22.6217 16.1955 22.4055 16.263 22.1966Z"/>
+                </Button>
+            </StackPanel>
+
+        <!-- Content -->
+        <Panel Grid.Column="1" Grid.Row="1">
+
+            <!-- HOME PAGE (merged with Servers) -->
+            <ScrollViewer IsVisible="{Binding CurrentPage, Converter={StaticResource PageEquals}, ConverterParameter=home}">
+                <StackPanel Margin="20,16" Spacing="12">
+                    <Border Background="#313244" CornerRadius="8" Padding="16,12">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="{Binding StatusText}" FontSize="16" FontWeight="SemiBold" Foreground="#CDD6F4"/>
+                                <TextBlock IsVisible="{Binding SelectedServer, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                           Foreground="#A6ADC8" FontSize="12">
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="{}{0} | {1}">
+                                            <Binding Path="SelectedServer.Region"/>
+                                            <Binding Path="SelectedServer.RemoteAddr"/>
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                                </StackPanel>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="6">
+                                <Button Classes="btn-green" Command="{Binding ConnectCommand}"
+                                        IsVisible="{Binding IsConnected, Converter={StaticResource InvBool}}"
+                                        IsEnabled="{Binding IsConnecting, Converter={StaticResource InvBool}}"
+                                        Content="Connect"
+                                        Background="#27AE60" Foreground="White"
+                                        FontWeight="SemiBold" Padding="20,8" CornerRadius="6"/>
+                                <Button Classes="btn-red" Command="{Binding DisconnectCommand}"
+                                        IsVisible="{Binding IsConnected}"
+                                        Content="Disconnect"
+                                        Background="#BF4040" Foreground="White"
+                                        FontWeight="SemiBold" Padding="20,8" CornerRadius="6"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border IsVisible="{Binding ErrorMessage, Converter={StaticResource StrNotEmpty}}"
+                            Background="#45293B" CornerRadius="6" Padding="12,8">
+                        <TextBlock Text="{Binding ErrorMessage}" Foreground="#F38BA8" FontSize="12" TextWrapping="Wrap"/>
+                    </Border>
+
+                    <Border IsVisible="{Binding IsConnected}" Background="#313244" CornerRadius="8" Padding="16,12">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Session" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4"/>
+                            <Grid ColumnDefinitions="*,*,*">
+                                <StackPanel>
+                                    <TextBlock Text="Duration" FontSize="11" Foreground="#6C7086"/>
+                                    <TextBlock Text="{Binding SessionDuration}" FontSize="14" Foreground="#CDD6F4"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Upload" FontSize="11" Foreground="#6C7086"/>
+                                    <TextBlock Text="{Binding SessionBytesUp, Converter={StaticResource BytesToStr}}" FontSize="14" Foreground="#89B4FA"/>
+                                    <TextBlock Text="{Binding SpeedUp, Converter={StaticResource SpeedToStr}}" FontSize="11" Foreground="#6C7086"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Download" FontSize="11" Foreground="#6C7086"/>
+                                    <TextBlock Text="{Binding SessionBytesDown, Converter={StaticResource BytesToStr}}" FontSize="14" Foreground="#A6E3A1"/>
+                                    <TextBlock Text="{Binding SpeedDown, Converter={StaticResource SpeedToStr}}" FontSize="11" Foreground="#6C7086"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#313244" CornerRadius="8" Padding="16,12">
+                        <StackPanel Spacing="6">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Servers" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4"/>
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                                    <Button Content="Add" Command="{Binding AddServerCommand}" Background="#45475A" Foreground="#CDD6F4" Padding="10,4" CornerRadius="4"/>
+                                    <Button Content="Import" Command="{Binding ImportConfigCommand}" Background="#45475A" Foreground="#CDD6F4" Padding="10,4" CornerRadius="4"/>
+                                </StackPanel>
+                            </Grid>
+
+                            <ListBox Classes="serverlist" ItemsSource="{Binding Servers}" SelectedItem="{Binding SelectedServer}"
+                                     Background="Transparent" Margin="0,4"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                <ListBox.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel/>
+                                    </ItemsPanelTemplate>
+                                </ListBox.ItemsPanel>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Classes="serverItem" CornerRadius="6" Padding="12,8" Margin="0,2">
+                                            <DockPanel>
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding Ping, Converter={StaticResource PingToStr}}"
+                                                           Foreground="#A6ADC8" FontSize="11" VerticalAlignment="Center" Margin="8,0,0,0"
+                                                           MinWidth="40" TextAlignment="Right"/>
+                                                <StackPanel Spacing="2">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4" TextTrimming="CharacterEllipsis"/>
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <TextBlock Text="{Binding Region}" FontSize="11" Foreground="#6C7086"/>
+                                                        <TextBlock Text="{Binding RemoteAddr}" FontSize="11" Foreground="#6C7086" TextTrimming="CharacterEllipsis"/>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <Button Content="Edit" Command="{Binding EditServerCommand}" Background="#45475A" Foreground="#CDD6F4" Padding="12,4" CornerRadius="4"/>
+                                <Button Content="Duplicate" Command="{Binding DuplicateServerCommand}" Background="#45475A" Foreground="#CDD6F4" Padding="12,4" CornerRadius="4"/>
+                                <Button Content="Export" Command="{Binding ExportServerCommand}" Background="#45475A" Foreground="#CDD6F4" Padding="12,4" CornerRadius="4"/>
+                                <Button Classes="btn-danger" Content="Remove" Command="{Binding RemoveServerCommand}" Background="#C47A8E" Foreground="#1E1E2E" Padding="12,4" CornerRadius="4"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- EDIT SERVER PAGE -->
+            <ScrollViewer IsVisible="{Binding CurrentPage, Converter={StaticResource PageEquals}, ConverterParameter=edit}">
+                <StackPanel Margin="20,16" Spacing="8">
+                    <TextBlock Text="Edit Server" FontSize="18" FontWeight="SemiBold" Foreground="#CDD6F4"/>
+
+                    <!-- Basic -->
+                    <Border Background="#313244" CornerRadius="8" Padding="16,12">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Basic" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4" Margin="0,0,0,4"/>
+                            <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                                <Grid.Styles>
+                                    <Style Selector="TextBlock"><Setter Property="VerticalAlignment" Value="Center"/><Setter Property="Foreground" Value="#A6ADC8"/><Setter Property="FontSize" Value="13"/><Setter Property="Margin" Value="0,4"/></Style>
+                                    <Style Selector="TextBox"><Setter Property="Background" Value="#45475A"/><Setter Property="Foreground" Value="#CDD6F4"/><Setter Property="Margin" Value="0,4"/><Setter Property="CornerRadius" Value="4"/><Setter Property="Padding" Value="8,4"/></Style>
+                                </Grid.Styles>
+                                <TextBlock Grid.Row="0" Text="Name"/>
+                                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding EditName}"/>
+                                <TextBlock Grid.Row="1" Text="Region"/>
+                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EditRegion}" Watermark="e.g. US, DE, JP"/>
+                                <TextBlock Grid.Row="2" Text="Server Address"/>
+                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding EditRemoteAddr}" Watermark="hostname or IP"/>
+                                <TextBlock Grid.Row="3" Text="Port"/>
+                                <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding EditRemotePort}"/>
+                                <TextBlock Grid.Row="4" Text="Password"/>
+                                <TextBox Grid.Row="4" Grid.Column="1"
+                                         Text="{Binding EditPassword}"
+                                         PasswordChar="{Binding IsPasswordVisible, Converter={StaticResource BoolToPasswordChar}}">
+                                    <TextBox.InnerRightContent>
+                                        <Button Command="{Binding TogglePasswordVisibilityCommand}"
+                                                Background="Transparent" Padding="4" Margin="0"
+                                                VerticalAlignment="Center" ToolTip.Tip="Show/Hide password" Cursor="Hand">
+                                            <Panel>
+                                                <PathIcon Width="14" Height="14" Foreground="#6C7086"
+                                                          IsVisible="{Binding IsPasswordVisible, Converter={StaticResource InvBool}}"
+                                                          Data="M12,9.0046246 C14.209139,9.0046246 16,10.7954856 16,13.0046246 C16,15.2137636 14.209139,17.0046246 12,17.0046246 C9.790861,17.0046246 8,15.2137636 8,13.0046246 C8,10.7954856 9.790861,9.0046246 12,9.0046246 Z M12,10.5046246 C10.6192881,10.5046246 9.5,11.6239127 9.5,13.0046246 C9.5,14.3853365 10.6192881,15.5046246 12,15.5046246 C13.3807119,15.5046246 14.5,14.3853365 14.5,13.0046246 C14.5,11.6239127 13.3807119,10.5046246 12,10.5046246 Z M12,5.5 C16.613512,5.5 20.5960869,8.65000641 21.7011157,13.0643865 C21.8017,13.4662019 21.557504,13.8734775 21.1556885,13.9740618 C20.7538731,14.0746462 20.3465976,13.8304502 20.2460132,13.4286347 C19.3071259,9.67795854 15.9213644,7 12,7 C8.07693257,7 4.69009765,9.68026417 3.75285786,13.4331499 C3.65249525,13.8350208 3.24535455,14.0794416 2.84348365,13.979079 C2.44161275,13.8787164 2.19719198,13.4715757 2.29755459,13.0697048 C3.4006459,8.65271806 7.38448293,5.5 12,5.5 Z"/>
+                                                <PathIcon Width="14" Height="14" Foreground="#CDD6F4"
+                                                          IsVisible="{Binding IsPasswordVisible}"
+                                                          Data="M2.21967 2.21967C1.9534 2.48594 1.9292 2.9026 2.14705 3.19621L2.21967 3.28033L6.25424 7.3149C4.33225 8.66437 2.89577 10.6799 2.29888 13.0644C2.1983 13.4662 2.4425 13.8735 2.84431 13.9741C3.24613 14.0746 3.6534 13.8305 3.75399 13.4286C4.28346 11.3135 5.59112 9.53947 7.33416 8.39452L9.14379 10.2043C8.43628 10.9258 8 11.9143 8 13.0046C8 15.2138 9.79086 17.0046 12 17.0046C13.0904 17.0046 14.0788 16.5683 14.8004 15.8608L20.7197 21.7803C21.0126 22.0732 21.4874 22.0732 21.7803 21.7803C22.0466 21.5141 22.0708 21.0974 21.8529 20.8038L21.7803 20.7197L15.6668 14.6055L15.668 14.604L14.4679 13.4061L11.598 10.5368L11.6 10.536L8.71877 7.65782L8.72 7.656L7.58672 6.52549L3.28033 2.21967C2.98744 1.92678 2.51256 1.92678 2.21967 2.21967ZM10.2041 11.2655L13.7392 14.8006C13.2892 15.2364 12.6759 15.5046 12 15.5046C10.6193 15.5046 9.5 14.3853 9.5 13.0046C9.5 12.3287 9.76824 11.7154 10.2041 11.2655ZM12 5.5C10.9997 5.5 10.0291 5.64807 9.11109 5.925L10.3481 7.16119C10.8839 7.05532 11.4364 7 12 7C15.9231 7 19.3099 9.68026 20.2471 13.4332C20.3475 13.835 20.7546 14.0794 21.1565 13.9791C21.5584 13.8787 21.8028 13.4716 21.7024 13.0697C20.5994 8.65272 16.6155 5.5 12 5.5ZM12.1947 9.00928L15.996 12.81C15.8942 10.7531 14.2472 9.10764 12.1947 9.00928Z"/>
+                                            </Panel>
+                                        </Button>
+                                    </TextBox.InnerRightContent>
+                                </TextBox>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- SSL Settings -->
+                    <Border Background="#313244" CornerRadius="8" Padding="16,12">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="SSL" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4" Margin="0,0,0,4"/>
+                            <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                                <Grid.Styles>
+                                    <Style Selector="TextBlock"><Setter Property="VerticalAlignment" Value="Center"/><Setter Property="Foreground" Value="#A6ADC8"/><Setter Property="FontSize" Value="13"/><Setter Property="Margin" Value="0,4"/></Style>
+                                    <Style Selector="TextBox"><Setter Property="Background" Value="#45475A"/><Setter Property="Foreground" Value="#CDD6F4"/><Setter Property="Margin" Value="0,4"/><Setter Property="CornerRadius" Value="4"/><Setter Property="Padding" Value="8,4"/></Style>
+                                </Grid.Styles>
+                                <TextBlock Grid.Row="0" Text="SNI"/>
+                                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding EditSni}" Watermark="leave empty to use server address"/>
+                                <TextBlock Grid.Row="1" Text="ALPN"/>
+                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EditAlpn}"/>
+                                <TextBlock Grid.Row="2" Text="Verify Certificate"/>
+                                <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding EditVerifyCert}" Margin="0,4"/>
+                                <TextBlock Grid.Row="3" Text="Cipher"/>
+                                <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding EditCipher}" TextWrapping="Wrap" AcceptsReturn="False"/>
+                                <TextBlock Grid.Row="4" Text="Cipher TLS 1.3"/>
+                                <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding EditCipherTls13}"/>
+                                <TextBlock Grid.Row="5" Text="Cert"/>
+                                <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding EditCert}" Watermark="path to certificate file"/>
+                                <TextBlock Grid.Row="6" Text="Key"/>
+                                <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding EditKey}" Watermark="path to key file"/>
+                                <TextBlock Grid.Row="7" Text="Reuse Session"/>
+                                <CheckBox Grid.Row="7" Grid.Column="1" IsChecked="{Binding EditReuseSession}" Margin="0,4"/>
+                                <TextBlock Grid.Row="8" Text="Session Ticket"/>
+                                <CheckBox Grid.Row="8" Grid.Column="1" IsChecked="{Binding EditSessionTicket}" Margin="0,4"/>
+                                <TextBlock Grid.Row="9" Text="Curves"/>
+                                <TextBox Grid.Row="9" Grid.Column="1" Text="{Binding EditCurves}" Watermark="leave empty for default"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- TCP Settings -->
+                    <Border Background="#313244" CornerRadius="8" Padding="16,12">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="TCP" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4" Margin="0,0,0,4"/>
+                            <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                                <Grid.Styles>
+                                    <Style Selector="TextBlock"><Setter Property="VerticalAlignment" Value="Center"/><Setter Property="Foreground" Value="#A6ADC8"/><Setter Property="FontSize" Value="13"/><Setter Property="Margin" Value="0,4"/></Style>
+                                    <Style Selector="TextBox"><Setter Property="Background" Value="#45475A"/><Setter Property="Foreground" Value="#CDD6F4"/><Setter Property="Margin" Value="0,4"/><Setter Property="CornerRadius" Value="4"/><Setter Property="Padding" Value="8,4"/></Style>
+                                </Grid.Styles>
+                                <TextBlock Grid.Row="0" Text="No Delay"/>
+                                <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding EditNoDelay}" Margin="0,4"/>
+                                <TextBlock Grid.Row="1" Text="Keep Alive"/>
+                                <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding EditKeepAlive}" Margin="0,4"/>
+                                <TextBlock Grid.Row="2" Text="Reuse Port"/>
+                                <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding EditReusePort}" Margin="0,4"/>
+                                <TextBlock Grid.Row="3" Text="Fast Open"/>
+                                <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding EditFastOpen}" Margin="0,4"/>
+                                <TextBlock Grid.Row="4" Text="Fast Open Queue"/>
+                                <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding EditFastOpenQlen}" Width="80" HorizontalAlignment="Left"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Logging -->
+                    <Border Background="#313244" CornerRadius="8" Padding="16,12">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Logging" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4" Margin="0,0,0,4"/>
+                            <Grid ColumnDefinitions="140,*" RowDefinitions="Auto">
+                                <TextBlock Text="Log Level" VerticalAlignment="Center" Foreground="#A6ADC8" FontSize="13" Margin="0,4"/>
+                                <ComboBox Grid.Column="1" ItemsSource="{Binding TrojanLogLevelOptions}"
+                                          SelectedIndex="{Binding EditTrojanLogLevel}"
+                                          Background="#45475A" Foreground="#CDD6F4" Margin="0,4"
+                                          Width="140" HorizontalAlignment="Left"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                        <Button Classes="btn-green" Content="Save" Command="{Binding SaveServerCommand}" Background="#27AE60" Foreground="White" Padding="16,6" CornerRadius="4" FontWeight="SemiBold"/>
+                        <Button Content="Cancel" Command="{Binding CancelEditCommand}" Background="#45475A" Foreground="#CDD6F4" Padding="16,6" CornerRadius="4"/>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- STATS PAGE -->
+            <ScrollViewer IsVisible="{Binding CurrentPage, Converter={StaticResource PageEquals}, ConverterParameter=stats}">
+                <StackPanel Margin="20,16" Spacing="10">
+                    <TextBlock Text="Usage Statistics" FontSize="18" FontWeight="SemiBold" Foreground="#CDD6F4"/>
+
+                    <TextBlock IsVisible="{Binding SelectedServer, Converter={x:Static ObjectConverters.IsNotNull}}"
+                               Foreground="#A6ADC8" FontSize="12" Margin="0,-4,0,0">
+                        <TextBlock.Text>
+                            <MultiBinding StringFormat="Selected server: {0}">
+                                <Binding Path="SelectedServer.Name"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+
+                    <Border Background="#313244" CornerRadius="8" Padding="16,12">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Current Session" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4"/>
+                            <Grid ColumnDefinitions="*,*,*">
+                                <StackPanel>
+                                    <TextBlock Text="Duration" FontSize="11" Foreground="#6C7086"/>
+                                    <TextBlock Text="{Binding SessionDuration}" FontSize="15" Foreground="#CDD6F4"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Upload" FontSize="11" Foreground="#6C7086"/>
+                                    <TextBlock Text="{Binding SessionBytesUp, Converter={StaticResource BytesToStr}}" FontSize="15" Foreground="#89B4FA"/>
+                                    <TextBlock Text="{Binding SpeedUp, Converter={StaticResource SpeedToStr}}" FontSize="11" Foreground="#6C7086"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Download" FontSize="11" Foreground="#6C7086"/>
+                                    <TextBlock Text="{Binding SessionBytesDown, Converter={StaticResource BytesToStr}}" FontSize="15" Foreground="#A6E3A1"/>
+                                    <TextBlock Text="{Binding SpeedDown, Converter={StaticResource SpeedToStr}}" FontSize="11" Foreground="#6C7086"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#313244" CornerRadius="8" Padding="16,12">
+                        <StackPanel Spacing="6">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="All Sessions" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4"/>
+                                <Button Classes="btn-danger" Grid.Column="1" Content="Reset" Command="{Binding ResetStatsCommand}"
+                                        Background="#C47A8E" Foreground="#1E1E2E" Padding="10,2" CornerRadius="4" FontSize="11"/>
+                            </Grid>
+                            <Grid ColumnDefinitions="*,*,*">
+                                <StackPanel>
+                                    <TextBlock Text="Total Time" FontSize="11" Foreground="#6C7086"/>
+                                    <TextBlock Text="{Binding TotalSeconds, Converter={StaticResource TotalTimeConv}}" FontSize="15" Foreground="#CDD6F4"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <TextBlock Text="Total Upload" FontSize="11" Foreground="#6C7086"/>
+                                    <TextBlock Text="{Binding TotalBytesUp, Converter={StaticResource BytesToStr}}" FontSize="15" Foreground="#89B4FA"/>
+                                </StackPanel>
+                                <StackPanel Grid.Column="2">
+                                    <TextBlock Text="Total Download" FontSize="11" Foreground="#6C7086"/>
+                                    <TextBlock Text="{Binding TotalBytesDown, Converter={StaticResource BytesToStr}}" FontSize="15" Foreground="#A6E3A1"/>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- PROXY SETTINGS PAGE -->
+            <ScrollViewer IsVisible="{Binding CurrentPage, Converter={StaticResource PageEquals}, ConverterParameter=proxy}">
+                <StackPanel Margin="20,16" Spacing="10">
+                    <TextBlock Text="Proxy Settings" FontSize="18" FontWeight="SemiBold" Foreground="#CDD6F4"/>
+
+                    <Border Background="#313244" CornerRadius="8" Padding="16,12">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Local Connection" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4"/>
+                            <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto">
+                                <TextBlock Text="Local Address" VerticalAlignment="Center" Foreground="#A6ADC8" FontSize="13" Margin="0,4"/>
+                                <TextBox Grid.Column="1" Text="{Binding LocalAddr}" Background="#45475A" Foreground="#CDD6F4"
+                                         CornerRadius="4" Padding="8,4" Width="180" HorizontalAlignment="Left" Margin="0,4"/>
+                                <TextBlock Grid.Row="1" Text="SOCKS Port" VerticalAlignment="Center" Foreground="#A6ADC8" FontSize="13" Margin="0,4"/>
+                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding LocalSocksPort}" Background="#45475A" Foreground="#CDD6F4"
+                                         CornerRadius="4" Padding="8,4" Width="120" HorizontalAlignment="Left" Margin="0,4"/>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#313244" CornerRadius="8" Padding="16,12">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Supported Protocols" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4"/>
+                            <StackPanel Orientation="Horizontal" Spacing="16">
+                                <CheckBox IsChecked="{Binding ProxySupportTcp}" Foreground="#CDD6F4">
+                                    <TextBlock Text="TCP" Foreground="#CDD6F4"/>
+                                </CheckBox>
+                                <CheckBox IsChecked="{Binding ProxySupportUdp}" Foreground="#CDD6F4">
+                                    <TextBlock Text="UDP" Foreground="#CDD6F4"/>
+                                </CheckBox>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#313244" CornerRadius="8" Padding="16,12">
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Log Level" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4"/>
+                            <ComboBox ItemsSource="{Binding ProxyLogLevels}" SelectedItem="{Binding ProxyLogLevel}"
+                                      Background="#45475A" Foreground="#CDD6F4" Width="160" HorizontalAlignment="Left"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Background="#313244" CornerRadius="8" Padding="16,12">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="Excluded Processes" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4"/>
+                            <TextBlock Text="Traffic from these processes will NOT be routed through the VPN. Supports absolute paths." FontSize="11" Foreground="#6C7086" TextWrapping="Wrap"/>
+
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <TextBox Text="{Binding NewExcludedProcess}" Watermark="process.exe or C:\path\to\app.exe"
+                                         Background="#45475A" Foreground="#CDD6F4" CornerRadius="4" Padding="8,4" Width="280"/>
+                                <Button Content="Add" Command="{Binding AddExcludedProcessCommand}"
+                                        Background="#45475A" Foreground="#CDD6F4" Padding="12,4" CornerRadius="4"/>
+                            </StackPanel>
+
+                            <ItemsControl ItemsSource="{Binding ExcludedProcesses}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Background="#45475A" CornerRadius="4" Padding="8,4" Margin="0,2">
+                                            <Grid ColumnDefinitions="*,Auto">
+                                                <TextBlock Text="{Binding}" Foreground="#CDD6F4" VerticalAlignment="Center" FontSize="12"/>
+                                                <Button Grid.Column="1" Content="X" FontSize="10" FontWeight="Bold"
+                                                        Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).RemoveExcludedProcessCommand}"
+                                                        CommandParameter="{Binding}"
+                                                        Background="Transparent" Foreground="#F38BA8" Padding="6,2"/>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- LOGS PAGE -->
+            <Grid IsVisible="{Binding CurrentPage, Converter={StaticResource PageEquals}, ConverterParameter=logs}"
+                  Margin="20,16" RowDefinitions="Auto,*">
+                <TextBlock Text="Logs" FontSize="18" FontWeight="SemiBold" Foreground="#CDD6F4" Margin="0,0,0,8"/>
+
+                <TabControl Grid.Row="1" Background="Transparent">
+                    <TabItem Header="Trojan" Foreground="#CDD6F4">
+                        <Border Background="#313244" CornerRadius="6" Padding="8">
+                            <Grid RowDefinitions="*,Auto">
+                                <TextBox x:Name="TrojanLogBox"
+                                         Classes="logbox"
+                                         Text="{Binding TrojanLog, Mode=OneWay}"
+                                         IsReadOnly="True"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         FontFamily="Consolas,monospace"
+                                         FontSize="11"
+                                         Foreground="#A6ADC8"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         Padding="4"
+                                         MaxHeight="600"/>
+                                <Button Grid.Row="1" Content="Clear" Command="{Binding ClearTrojanLogsCommand}"
+                                        Background="#45475A" Foreground="#CDD6F4" Padding="10,4" CornerRadius="4"
+                                        HorizontalAlignment="Right" Margin="0,6,0,0"/>
+                            </Grid>
+                        </Border>
+                    </TabItem>
+                    <TabItem Header="Proxifyre" Foreground="#CDD6F4">
+                        <Border Background="#313244" CornerRadius="6" Padding="8">
+                            <Grid RowDefinitions="*,Auto">
+                                <TextBox x:Name="ProxifyreLogBox"
+                                         Classes="logbox"
+                                         Text="{Binding ProxifyreLog, Mode=OneWay}"
+                                         IsReadOnly="True"
+                                         AcceptsReturn="True"
+                                         TextWrapping="Wrap"
+                                         FontFamily="Consolas,monospace"
+                                         FontSize="11"
+                                         Foreground="#A6ADC8"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         Padding="4"
+                                         MaxHeight="600"/>
+                                <Button Grid.Row="1" Content="Clear" Command="{Binding ClearProxifyreLogsCommand}"
+                                        Background="#45475A" Foreground="#CDD6F4" Padding="10,4" CornerRadius="4"
+                                        HorizontalAlignment="Right" Margin="0,6,0,0"/>
+                            </Grid>
+                        </Border>
+                    </TabItem>
+                </TabControl>
+            </Grid>
+
+            <!-- SETTINGS PAGE -->
+            <ScrollViewer IsVisible="{Binding CurrentPage, Converter={StaticResource PageEquals}, ConverterParameter=settings}">
+                <StackPanel Margin="20,16" Spacing="10">
+                    <TextBlock Text="Settings" FontSize="18" FontWeight="SemiBold" Foreground="#CDD6F4"/>
+
+                    <Border Background="#313244" CornerRadius="8" Padding="16,12">
+                        <StackPanel Spacing="8">
+                            <CheckBox IsChecked="{Binding AutoStart}" Foreground="#CDD6F4">
+                                <TextBlock Text="Start with Windows" Foreground="#CDD6F4"/>
+                            </CheckBox>
+                            <CheckBox IsChecked="{Binding AutoConnect}" Foreground="#CDD6F4">
+                                <TextBlock Text="Auto-connect on startup" Foreground="#CDD6F4"/>
+                            </CheckBox>
+                            <CheckBox IsChecked="{Binding MinimizeToTray}" Foreground="#CDD6F4">
+                                <TextBlock Text="Minimize to system tray" Foreground="#CDD6F4"/>
+                            </CheckBox>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Panel>
+    </Grid>
+</Window>

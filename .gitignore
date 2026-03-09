@@ -1,0 +1,31 @@
+## .NET
+bin/
+obj/
+publish/
+
+## IDE
+.vs/
+*.user
+*.suo
+
+## Inno Setup output
+installer_output/
+
+## OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+## Tool binaries (download manually – see .gitkeep files for instructions)
+trojan4win/Tools/trojan/*
+trojan4win/Tools/proxifyre/*
+trojan4win/Tools/ndisapi/*
+
+## Keep placeholder files that track empty tool directories
+!**/.gitkeep
+
+## APM project management artifacts (internal planning only)
+.apm/
+
+## APM prompt files (internal tooling, not CI)
+.github/prompts/

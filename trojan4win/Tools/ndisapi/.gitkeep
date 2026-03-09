@@ -1,0 +1,5 @@
+# Windows Packet Filter (NDISAPI) Driver
+# Version: 3.6.2.1
+# Download: https://github.com/wiresock/ndisapi/releases
+# File: Windows.Packet.Filter.3.6.2.1.x64.msi
+# Place the MSI file in this directory.
