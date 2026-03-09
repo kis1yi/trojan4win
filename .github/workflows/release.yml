@@ -74,7 +74,7 @@ jobs:
 
       # ── Build + Test ──────────────────────────────────────────────────────
       - name: Restore
-        run: dotnet restore trojan4win.slnx
+        run: dotnet restore trojan4win.slnx -r win-x64
 
       - name: Build
         run: dotnet build trojan4win.slnx -c Release --no-restore
