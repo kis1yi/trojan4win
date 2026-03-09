@@ -12,7 +12,7 @@ on:
 env:
   TROJAN_URL: https://github.com/trojan-gfw/trojan/releases/download/v1.16.0/trojan-1.16.0-win.zip
   PROXIFYRE_URL: https://github.com/wiresock/proxifyre/releases/download/v2.2.0/ProxiFyre-v2.2.0-x64-signed.zip
-  NDISAPI_URL: https://github.com/wiresock/ndisapi/releases/download/v3.6.2.1/Windows.Packet.Filter.3.6.2.1.x64.msi
+  NDISAPI_URL: https://github.com/wiresock/ndisapi/releases/download/v3.6.2/Windows.Packet.Filter.3.6.2.1.x64.msi
 
 jobs:
   build-and-release:
