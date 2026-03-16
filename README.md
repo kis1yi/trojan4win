@@ -1,6 +1,6 @@
 # trojan4win
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 
 **trojan4win** is a Windows GUI client for the [Trojan](https://github.com/trojan-gfw/trojan)
 proxy protocol. It routes system-wide traffic through a Trojan server using
@@ -182,6 +182,18 @@ trojan4win is built on top of three excellent open-source projects:
 
 ## License
 
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file
-for details.
+The trojan4win source code is licensed under the
+[GNU Affero General Public License v3.0](LICENSE).
+
+This project downloads and bundles the following third-party tools,
+each governed by its own license:
+
+| Tool | License |
+|------|---------|
+| [trojan](https://github.com/trojan-gfw/trojan) | [GPL-3.0](https://github.com/trojan-gfw/trojan/blob/master/LICENSE) |
+| [ProxiFyre](https://github.com/wiresock/proxifyre) | [AGPL-3.0](https://github.com/wiresock/proxifyre/blob/main/LICENSE) |
+| [NDISAPI](https://github.com/wiresock/ndisapi) | [MIT](https://github.com/wiresock/ndisapi/blob/master/LICENSE) |
+
+The distributed installer includes these binaries.
+Their respective licenses apply to those components.
 
