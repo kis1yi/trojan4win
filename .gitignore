@@ -29,3 +29,8 @@ trojan4win/Tools/ndisapi/*
 
 ## APM prompt files (internal tooling, not CI)
 .github/prompts/
+.github/agents/
+.github/apm-guides/
+.github/skills/
+
+AGENTS.md

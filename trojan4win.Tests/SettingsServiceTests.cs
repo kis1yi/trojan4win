@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json;
 using trojan4win.Models;
 using trojan4win.Services;
 using Xunit;
@@ -49,7 +50,7 @@ public sealed class SettingsServiceTests : IDisposable
             LocalAddr = "192.168.1.1",
             ProxyLogLevel = "Debug",
             SupportedProtocols = new List<string> { "TCP" },
-            ExcludedProcesses = new List<string> { "chrome.exe" },
+            FilteredProcesses = new List<string> { "chrome.exe" },
             Servers = new List<ServerConfig> { server }
         };
 
@@ -64,7 +65,7 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal("192.168.1.1", loaded.LocalAddr);
         Assert.Equal("Debug", loaded.ProxyLogLevel);
         Assert.Equal(new List<string> { "TCP" }, loaded.SupportedProtocols);
-        Assert.Equal(new List<string> { "chrome.exe" }, loaded.ExcludedProcesses);
+        Assert.Equal(new List<string> { "chrome.exe" }, loaded.FilteredProcesses);
         Assert.Single(loaded.Servers);
         Assert.Equal("Test Server", loaded.Servers[0].Name);
         Assert.Equal("example.com", loaded.Servers[0].RemoteAddr);
@@ -88,7 +89,7 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal("127.0.0.1", loaded.LocalAddr);
         Assert.Equal(new List<string> { "TCP", "UDP" }, loaded.SupportedProtocols);
         Assert.Equal("Info", loaded.ProxyLogLevel);
-        Assert.Empty(loaded.ExcludedProcesses);
+        Assert.Empty(loaded.FilteredProcesses);
     }
 
     [Fact]
@@ -222,5 +223,45 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal("block", s.RouterRules[2].Policy);
         Assert.Equal("geoip", s.RouterRules[2].Type);
         Assert.Equal("cn", s.RouterRules[2].Value);
+    }
+
+    // ── FilterMode round-trip ─────────────────────────────────────────────────
+
+    [Fact]
+    public void FilterMode_IncludeOnly_RoundTrips()
+    {
+        var settings = new AppSettings { FilterMode = ProcessFilterMode.IncludeOnlyListed };
+        SettingsService.Save(settings);
+        var loaded = SettingsService.Load();
+        Assert.Equal(ProcessFilterMode.IncludeOnlyListed, loaded.FilterMode);
+    }
+
+    [Fact]
+    public void FilterMode_ExcludeListed_RoundTrips()
+    {
+        var settings = new AppSettings { FilterMode = ProcessFilterMode.ExcludeListed };
+        SettingsService.Save(settings);
+        var loaded = SettingsService.Load();
+        Assert.Equal(ProcessFilterMode.ExcludeListed, loaded.FilterMode);
+    }
+
+    // ── Legacy alias: JSON key "ExcludedProcesses" → FilteredProcesses ────────
+
+    [Fact]
+    public void Load_LegacyExcludedProcessesKey_DeserializesIntoFilteredProcesses()
+    {
+        // Write a synthetic settings file using the legacy JSON key name
+        var legacyJson = """
+            {
+              "ExcludedProcesses": ["chrome.exe", "firefox.exe"]
+            }
+            """;
+        File.WriteAllText(Path.Combine(_tempDir, "settings.json"), legacyJson);
+
+        var loaded = SettingsService.Load();
+
+        Assert.Equal(2, loaded.FilteredProcesses.Count);
+        Assert.Contains("chrome.exe", loaded.FilteredProcesses);
+        Assert.Contains("firefox.exe", loaded.FilteredProcesses);
     }
 }

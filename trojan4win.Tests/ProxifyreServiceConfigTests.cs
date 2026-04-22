@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using trojan4win.Models;
 using trojan4win.Services;
 using Xunit;
 
@@ -161,5 +162,120 @@ public sealed class ProxifyreServiceConfigTests : IDisposable
         var json = File.ReadAllText(Path.Combine(_tempDir, "app-config.json"));
         // "  " and "" should not appear as entries (only trojan.exe + chrome.exe)
         Assert.Contains("\"chrome.exe\"", json);
+    }
+
+    // ── WriteProxifyreConfig — dual-binary invariant ──────────────────────────
+
+    [Fact]
+    public void WriteProxifyreConfig_ExcludesAlwaysContainsBothBinaries_ExcludeListed()
+    {
+        _svc.WriteProxifyreConfig(_tempDir, 1080, "127.0.0.1", new[] { "TCP" }, "Info",
+            Array.Empty<string>(), ProcessFilterMode.ExcludeListed);
+        using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(_tempDir, "app-config.json")));
+        var excludes = doc.RootElement.GetProperty("excludes");
+        var entries = new System.Collections.Generic.List<string>();
+        foreach (var e in excludes.EnumerateArray()) entries.Add(e.GetString()!);
+        Assert.Contains("trojan.exe", entries);
+        Assert.Contains("trojan-go.exe", entries);
+    }
+
+    [Fact]
+    public void WriteProxifyreConfig_ExcludesAlwaysContainsBothBinaries_IncludeOnly()
+    {
+        _svc.WriteProxifyreConfig(_tempDir, 1080, "127.0.0.1", new[] { "TCP" }, "Info",
+            new[] { "chrome.exe" }, ProcessFilterMode.IncludeOnlyListed);
+        using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(_tempDir, "app-config.json")));
+        var excludes = doc.RootElement.GetProperty("excludes");
+        var entries = new System.Collections.Generic.List<string>();
+        foreach (var e in excludes.EnumerateArray()) entries.Add(e.GetString()!);
+        Assert.Contains("trojan.exe", entries);
+        Assert.Contains("trojan-go.exe", entries);
+    }
+
+    // ── WriteProxifyreConfig — ExcludeListed mode shape ──────────────────────
+
+    [Fact]
+    public void WriteProxifyreConfig_ExcludeListedMode_AppNamesIsCatchAll()
+    {
+        _svc.WriteProxifyreConfig(_tempDir, 1080, "127.0.0.1", new[] { "TCP" }, "Info",
+            new[] { "chrome.exe" }, ProcessFilterMode.ExcludeListed);
+        using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(_tempDir, "app-config.json")));
+        var proxy = doc.RootElement.GetProperty("proxies")[0];
+        var appNames = proxy.GetProperty("appNames");
+        Assert.Equal(1, appNames.GetArrayLength());
+        Assert.Equal("", appNames[0].GetString());
+    }
+
+    [Fact]
+    public void WriteProxifyreConfig_ExcludeListedMode_UserListInExcludes()
+    {
+        _svc.WriteProxifyreConfig(_tempDir, 1080, "127.0.0.1", new[] { "TCP" }, "Info",
+            new[] { "chrome.exe" }, ProcessFilterMode.ExcludeListed);
+        using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(_tempDir, "app-config.json")));
+        var entries = new System.Collections.Generic.List<string>();
+        foreach (var e in doc.RootElement.GetProperty("excludes").EnumerateArray())
+            entries.Add(e.GetString()!);
+        Assert.Contains("chrome.exe", entries);
+    }
+
+    // ── WriteProxifyreConfig — IncludeOnlyListed mode shape ──────────────────
+
+    [Fact]
+    public void WriteProxifyreConfig_IncludeOnlyListedMode_UserListInAppNames()
+    {
+        _svc.WriteProxifyreConfig(_tempDir, 1080, "127.0.0.1", new[] { "TCP" }, "Info",
+            new[] { "chrome.exe", "firefox.exe" }, ProcessFilterMode.IncludeOnlyListed);
+        using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(_tempDir, "app-config.json")));
+        var proxy = doc.RootElement.GetProperty("proxies")[0];
+        var entries = new System.Collections.Generic.List<string>();
+        foreach (var e in proxy.GetProperty("appNames").EnumerateArray())
+            entries.Add(e.GetString()!);
+        Assert.Contains("chrome.exe", entries);
+        Assert.Contains("firefox.exe", entries);
+    }
+
+    [Fact]
+    public void WriteProxifyreConfig_IncludeOnlyListedMode_ExcludesOnlyBinaries()
+    {
+        _svc.WriteProxifyreConfig(_tempDir, 1080, "127.0.0.1", new[] { "TCP" }, "Info",
+            new[] { "chrome.exe" }, ProcessFilterMode.IncludeOnlyListed);
+        using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(_tempDir, "app-config.json")));
+        var entries = new System.Collections.Generic.List<string>();
+        foreach (var e in doc.RootElement.GetProperty("excludes").EnumerateArray())
+            entries.Add(e.GetString()!);
+        // Excludes must contain only the two canonical binaries, not the user list
+        Assert.Equal(2, entries.Count);
+        Assert.Contains("trojan.exe", entries);
+        Assert.Contains("trojan-go.exe", entries);
+        Assert.DoesNotContain("chrome.exe", entries);
+    }
+
+    // ── WriteProxifyreConfig — case-insensitive de-duplication ───────────────
+
+    [Fact]
+    public void WriteProxifyreConfig_CaseInsensitiveDeDup_TrojanExeVariant()
+    {
+        // User list with casing variants of the canonical binaries
+        _svc.WriteProxifyreConfig(_tempDir, 1080, "127.0.0.1", new[] { "TCP" }, "Info",
+            new[] { "Trojan.exe", "TROJAN-GO.EXE" }, ProcessFilterMode.ExcludeListed);
+        using var doc = JsonDocument.Parse(File.ReadAllText(Path.Combine(_tempDir, "app-config.json")));
+        var entries = new System.Collections.Generic.List<string>();
+        foreach (var e in doc.RootElement.GetProperty("excludes").EnumerateArray())
+            entries.Add(e.GetString()!);
+
+        // Each canonical binary appears exactly once (case-insensitively de-duped)
+        Assert.Single(entries, e => string.Equals(e, "trojan.exe", StringComparison.OrdinalIgnoreCase));
+        Assert.Single(entries, e => string.Equals(e, "trojan-go.exe", StringComparison.OrdinalIgnoreCase));
+    }
+
+    // ── Atomic write ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public void WriteProxifyreConfig_AtomicWrite_TmpFileDoesNotPersist()
+    {
+        _svc.WriteProxifyreConfig(_tempDir, 1080, "127.0.0.1", new[] { "TCP" }, "Info", Array.Empty<string>());
+        Assert.False(File.Exists(Path.Combine(_tempDir, "app-config.json.tmp")),
+            ".tmp file must not remain after WriteProxifyreConfig()");
+        Assert.True(File.Exists(Path.Combine(_tempDir, "app-config.json")));
     }
 }

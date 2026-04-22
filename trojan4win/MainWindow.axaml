@@ -23,6 +23,7 @@
         <conv:StringNotEmptyConverter x:Key="StrNotEmpty"/>
         <conv:BoolToPasswordCharConverter x:Key="BoolToPasswordChar"/>
         <conv:BytesToMegabytesConverter x:Key="BytesToMB"/>
+        <conv:EnumEqualsBoolConverter x:Key="EnumEqualsBool"/>
     </Window.Resources>
 
     <Window.Styles>
@@ -665,24 +666,34 @@
 
                     <Border Background="#313244" CornerRadius="8" Padding="16,12">
                         <StackPanel Spacing="8">
-                            <TextBlock Text="Excluded Processes" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4"/>
-                            <TextBlock Text="Traffic from these processes will NOT be routed through the VPN. Supports absolute paths." FontSize="11" Foreground="#6C7086" TextWrapping="Wrap"/>
+                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                <RadioButton GroupName="FilterMode"
+                                             Content="Exclude listed"
+                                             Foreground="#CDD6F4"
+                                             IsChecked="{Binding FilterMode, Converter={StaticResource EnumEqualsBool}, ConverterParameter=ExcludeListed}"/>
+                                <RadioButton GroupName="FilterMode"
+                                             Content="Include only listed"
+                                             Foreground="#CDD6F4"
+                                             IsChecked="{Binding FilterMode, Converter={StaticResource EnumEqualsBool}, ConverterParameter=IncludeOnlyListed}"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding ProcessListLabel}" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4"/>
+                            <TextBlock Text="{Binding ProcessListHelpText}" FontSize="11" Foreground="#6C7086" TextWrapping="Wrap"/>
 
                             <StackPanel Orientation="Horizontal" Spacing="6">
-                                <TextBox Text="{Binding NewExcludedProcess}" Watermark="process.exe or C:\path\to\app.exe"
+                                <TextBox Text="{Binding NewFilteredProcess}" Watermark="process.exe or C:\path\to\app.exe"
                                          Background="#45475A" Foreground="#CDD6F4" CornerRadius="4" Padding="8,4" Width="280"/>
-                                <Button Content="Add" Command="{Binding AddExcludedProcessCommand}"
+                                <Button Content="Add" Command="{Binding AddFilteredProcessCommand}"
                                         Background="#45475A" Foreground="#CDD6F4" Padding="12,4" CornerRadius="4"/>
                             </StackPanel>
 
-                            <ItemsControl ItemsSource="{Binding ExcludedProcesses}">
+                            <ItemsControl ItemsSource="{Binding FilteredProcesses}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
                                         <Border Background="#45475A" CornerRadius="4" Padding="8,4" Margin="0,2">
                                             <Grid ColumnDefinitions="*,Auto">
                                                 <TextBlock Text="{Binding}" Foreground="#CDD6F4" VerticalAlignment="Center" FontSize="12"/>
                                                 <Button Grid.Column="1" Content="X" FontSize="10" FontWeight="Bold"
-                                                        Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).RemoveExcludedProcessCommand}"
+                                                        Command="{Binding $parent[ItemsControl].((vm:MainViewModel)DataContext).RemoveFilteredProcessCommand}"
                                                         CommandParameter="{Binding}"
                                                         Background="Transparent" Foreground="#F38BA8" Padding="6,2"/>
                                             </Grid>

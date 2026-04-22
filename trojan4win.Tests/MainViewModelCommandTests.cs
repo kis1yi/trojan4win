@@ -1,7 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Avalonia.Headless.XUnit;
+using trojan4win.Models;
 using trojan4win.Services;
 using trojan4win.ViewModels;
 using Xunit;
@@ -91,37 +93,56 @@ public sealed class MainViewModelCommandTests : IDisposable
         Assert.Equal("example.com", vm.Servers[1].RemoteAddr);
     }
 
-    // ── AddExcludedProcess ────────────────────────────────────────────────────
+    // ── AddFilteredProcess ────────────────────────────────────────────────────
 
     [AvaloniaFact]
-    public void AddExcludedProcess_AppearsInCollection()
+    public void AddFilteredProcess_AppearsInCollection()
     {
         using var vm = new MainViewModel();
-        vm.NewExcludedProcess = "chrome.exe";
-        vm.AddExcludedProcessCommand.Execute(null);
-        Assert.Contains("chrome.exe", vm.ExcludedProcesses);
+        vm.NewFilteredProcess = "chrome.exe";
+        vm.AddFilteredProcessCommand.Execute(null);
+        Assert.Contains("chrome.exe", vm.FilteredProcesses);
     }
 
     [AvaloniaFact]
-    public void AddExcludedProcess_Duplicate_OnlyOneEntry()
+    public void AddFilteredProcess_Duplicate_OnlyOneEntry()
     {
         using var vm = new MainViewModel();
-        vm.NewExcludedProcess = "chrome.exe";
-        vm.AddExcludedProcessCommand.Execute(null);
-        vm.NewExcludedProcess = "chrome.exe";
-        vm.AddExcludedProcessCommand.Execute(null);
-        Assert.Single(vm.ExcludedProcesses.Where(p => p == "chrome.exe"));
+        vm.NewFilteredProcess = "chrome.exe";
+        vm.AddFilteredProcessCommand.Execute(null);
+        vm.NewFilteredProcess = "chrome.exe";
+        vm.AddFilteredProcessCommand.Execute(null);
+        Assert.Single(vm.FilteredProcesses, p => p == "chrome.exe");
     }
 
-    // ── RemoveExcludedProcess ─────────────────────────────────────────────────
+    // ── RemoveFilteredProcess ─────────────────────────────────────────────────
 
     [AvaloniaFact]
-    public void RemoveExcludedProcess_AfterAdd_CollectionIsEmpty()
+    public void RemoveFilteredProcess_AfterAdd_CollectionIsEmpty()
     {
         using var vm = new MainViewModel();
-        vm.NewExcludedProcess = "chrome.exe";
-        vm.AddExcludedProcessCommand.Execute(null);
-        vm.RemoveExcludedProcessCommand.Execute("chrome.exe");
-        Assert.Empty(vm.ExcludedProcesses);
+        vm.NewFilteredProcess = "chrome.exe";
+        vm.AddFilteredProcessCommand.Execute(null);
+        vm.RemoveFilteredProcessCommand.Execute("chrome.exe");
+        Assert.Empty(vm.FilteredProcesses);
+    }
+
+    // ── FilterMode property change notifications ──────────────────────────────
+
+    [AvaloniaFact]
+    public void FilterMode_Change_RaisesPropertyChangedForAllThree()
+    {
+        using var vm = new MainViewModel();
+        var raised = new List<string>();
+        vm.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName != null) raised.Add(e.PropertyName);
+        };
+
+        vm.FilterMode = ProcessFilterMode.IncludeOnlyListed;
+
+        Assert.Contains(nameof(vm.FilterMode), raised);
+        Assert.Contains(nameof(vm.ProcessListLabel), raised);
+        Assert.Contains(nameof(vm.ProcessListHelpText), raised);
     }
 }
