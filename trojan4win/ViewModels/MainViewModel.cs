@@ -132,19 +132,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private string _editSni = "";
     [ObservableProperty] private string _editAlpn = "h2,http/1.1";
     [ObservableProperty] private bool _isPasswordVisible;
-    [ObservableProperty] private string _editCipher = "";
-    [ObservableProperty] private string _editCipherTls13 = "";
     [ObservableProperty] private int _editTrojanLogLevel = 1;
     [ObservableProperty] private string _editCert = "";
     [ObservableProperty] private string _editKey = "";
-    [ObservableProperty] private bool _editReuseSession = true;
-    [ObservableProperty] private bool _editSessionTicket;
     [ObservableProperty] private string _editCurves = "";
     [ObservableProperty] private bool _editNoDelay = true;
     [ObservableProperty] private bool _editKeepAlive = true;
-    [ObservableProperty] private bool _editReusePort;
-    [ObservableProperty] private bool _editFastOpen;
-    [ObservableProperty] private int _editFastOpenQlen = 20;
 
     // --- Settings ---
     [ObservableProperty] private int _localSocksPort = 1080;
@@ -398,19 +391,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
         EditSni = s.Sni;
         EditAlpn = s.Alpn;
         IsPasswordVisible = false;
-        EditCipher = s.Cipher;
-        EditCipherTls13 = s.CipherTls13;
         EditTrojanLogLevel = s.TrojanLogLevel;
         EditCert = s.Cert;
         EditKey = s.Key;
-        EditReuseSession = s.ReuseSession;
-        EditSessionTicket = s.SessionTicket;
         EditCurves = s.Curves;
         EditNoDelay = s.NoDelay;
         EditKeepAlive = s.KeepAlive;
-        EditReusePort = s.ReusePort;
-        EditFastOpen = s.FastOpen;
-        EditFastOpenQlen = s.FastOpenQlen;
     }
 
     [RelayCommand]
@@ -425,19 +411,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
         EditingServer.VerifyCert = EditVerifyCert;
         EditingServer.Sni = EditSni;
         EditingServer.Alpn = EditAlpn;
-        EditingServer.Cipher = EditCipher;
-        EditingServer.CipherTls13 = EditCipherTls13;
         EditingServer.TrojanLogLevel = EditTrojanLogLevel;
         EditingServer.Cert = EditCert;
         EditingServer.Key = EditKey;
-        EditingServer.ReuseSession = EditReuseSession;
-        EditingServer.SessionTicket = EditSessionTicket;
         EditingServer.Curves = EditCurves;
         EditingServer.NoDelay = EditNoDelay;
         EditingServer.KeepAlive = EditKeepAlive;
-        EditingServer.ReusePort = EditReusePort;
-        EditingServer.FastOpen = EditFastOpen;
-        EditingServer.FastOpenQlen = EditFastOpenQlen;
 
         var idx = Servers.IndexOf(EditingServer);
         if (idx >= 0)
@@ -461,6 +440,34 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
         IsPasswordVisible = !IsPasswordVisible;
     }
+
+    // --- Router Rules (editor) ---
+    [ObservableProperty] private RouterRule? _selectedRouterRule;
+
+    [RelayCommand]
+    private void AddRouterRule()
+    {
+        if (EditingServer == null) return;
+        var rule = new RouterRule();
+        EditingServer.RouterRules.Add(rule);
+        SelectedRouterRule = rule;
+    }
+
+    [RelayCommand]
+    private void RemoveRouterRule()
+    {
+        if (EditingServer == null || SelectedRouterRule == null) return;
+        EditingServer.RouterRules.Remove(SelectedRouterRule);
+        SelectedRouterRule = null;
+    }
+
+    // --- Router / Shadowsocks / Fingerprint combobox sources ---
+    public List<string> RouterPolicyOptions { get; } = new() { "bypass", "proxy", "block" };
+    public List<string> RouterRuleTypeOptions { get; } = new() { "domain", "full", "regexp", "cidr", "geoip", "geosite" };
+    public List<string> RouterDomainStrategyOptions { get; } = new() { "as_is", "ip_if_non_match", "ip_on_demand" };
+    public List<string> ShadowsocksMethodOptions { get; } = new() { "AES-128-GCM", "AES-256-GCM", "CHACHA20-IETF-POLY1305" };
+    public List<string> FingerprintOptions { get; } = new() { "", "firefox", "chrome", "ios" };
+    public List<int> MuxProtocolOptions { get; } = new() { 1, 2 };
 
     [RelayCommand]
     private async Task ImportConfigAsync()

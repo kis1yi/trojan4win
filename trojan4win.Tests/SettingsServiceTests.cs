@@ -114,4 +114,113 @@ public sealed class SettingsServiceTests : IDisposable
             "CR-14: .tmp file must not remain after Save()");
         Assert.True(File.Exists(Path.Combine(_tempDir, "settings.json")));
     }
+
+    [Fact]
+    public void Save_ThenLoad_RoundTrip_PreservesAllNewServerConfigFields()
+    {
+        var server = new ServerConfig
+        {
+            Name = "Full Server",
+            Region = "EU",
+            RemoteAddr = "example.com",
+            RemotePort = 8443,
+            Password = "pw",
+            VerifyCert = false,
+            Sni = "custom.sni",
+            Alpn = "h2,http/1.1",
+            Cert = "/path/cert.pem",
+            Key = "/path/key.pem",
+            Curves = "P-256",
+            Fingerprint = "firefox",
+            Ech = true,
+            EchConfig = "AEj+DQBEb...",
+            NoDelay = false,
+            KeepAlive = false,
+            PreferIpv4 = true,
+            MuxEnabled = true,
+            MuxConcurrency = 16,
+            MuxIdleTimeout = 60,
+            MuxStreamBuffer = 8388608,
+            MuxReceiveBuffer = 8388608,
+            MuxProtocol = 1,
+            WebsocketEnabled = true,
+            WebsocketPath = "/ws",
+            WebsocketHost = "ws.example.com",
+            ShadowsocksEnabled = true,
+            ShadowsocksMethod = "AES-256-GCM",
+            ShadowsocksPassword = "sspass",
+            RouterEnabled = true,
+            RouterDefaultPolicy = "bypass",
+            RouterDomainStrategy = "ip_if_non_match",
+            RouterGeoip = "custom-geoip.dat",
+            RouterGeosite = "custom-geosite.dat",
+            ForwardProxyEnabled = true,
+            ForwardProxyAddr = "10.0.0.1",
+            ForwardProxyPort = 3128,
+            ForwardProxyUsername = "fpuser",
+            ForwardProxyPassword = "fppw",
+            TrojanLogLevel = 4
+        };
+        server.RouterRules.Add(new RouterRule { Policy = "bypass", Type = "cidr", Value = "10.0.0.0/8" });
+        server.RouterRules.Add(new RouterRule { Policy = "proxy", Type = "domain", Value = "example.com" });
+        server.RouterRules.Add(new RouterRule { Policy = "block", Type = "geoip", Value = "cn" });
+
+        var settings = new AppSettings { Servers = new List<ServerConfig> { server } };
+
+        SettingsService.Save(settings);
+        var loaded = SettingsService.Load();
+        var s = Assert.Single(loaded.Servers);
+
+        Assert.Equal("Full Server", s.Name);
+        Assert.Equal("EU", s.Region);
+        Assert.Equal("example.com", s.RemoteAddr);
+        Assert.Equal(8443, s.RemotePort);
+        Assert.Equal("pw", s.Password);
+        Assert.False(s.VerifyCert);
+        Assert.Equal("custom.sni", s.Sni);
+        Assert.Equal("h2,http/1.1", s.Alpn);
+        Assert.Equal("/path/cert.pem", s.Cert);
+        Assert.Equal("/path/key.pem", s.Key);
+        Assert.Equal("P-256", s.Curves);
+        Assert.Equal("firefox", s.Fingerprint);
+        Assert.True(s.Ech);
+        Assert.Equal("AEj+DQBEb...", s.EchConfig);
+        Assert.False(s.NoDelay);
+        Assert.False(s.KeepAlive);
+        Assert.True(s.PreferIpv4);
+        Assert.True(s.MuxEnabled);
+        Assert.Equal(16, s.MuxConcurrency);
+        Assert.Equal(60, s.MuxIdleTimeout);
+        Assert.Equal(8388608, s.MuxStreamBuffer);
+        Assert.Equal(8388608, s.MuxReceiveBuffer);
+        Assert.Equal(1, s.MuxProtocol);
+        Assert.True(s.WebsocketEnabled);
+        Assert.Equal("/ws", s.WebsocketPath);
+        Assert.Equal("ws.example.com", s.WebsocketHost);
+        Assert.True(s.ShadowsocksEnabled);
+        Assert.Equal("AES-256-GCM", s.ShadowsocksMethod);
+        Assert.Equal("sspass", s.ShadowsocksPassword);
+        Assert.True(s.RouterEnabled);
+        Assert.Equal("bypass", s.RouterDefaultPolicy);
+        Assert.Equal("ip_if_non_match", s.RouterDomainStrategy);
+        Assert.Equal("custom-geoip.dat", s.RouterGeoip);
+        Assert.Equal("custom-geosite.dat", s.RouterGeosite);
+        Assert.True(s.ForwardProxyEnabled);
+        Assert.Equal("10.0.0.1", s.ForwardProxyAddr);
+        Assert.Equal(3128, s.ForwardProxyPort);
+        Assert.Equal("fpuser", s.ForwardProxyUsername);
+        Assert.Equal("fppw", s.ForwardProxyPassword);
+        Assert.Equal(4, s.TrojanLogLevel);
+
+        Assert.Equal(3, s.RouterRules.Count);
+        Assert.Equal("bypass", s.RouterRules[0].Policy);
+        Assert.Equal("cidr", s.RouterRules[0].Type);
+        Assert.Equal("10.0.0.0/8", s.RouterRules[0].Value);
+        Assert.Equal("proxy", s.RouterRules[1].Policy);
+        Assert.Equal("domain", s.RouterRules[1].Type);
+        Assert.Equal("example.com", s.RouterRules[1].Value);
+        Assert.Equal("block", s.RouterRules[2].Policy);
+        Assert.Equal("geoip", s.RouterRules[2].Type);
+        Assert.Equal("cn", s.RouterRules[2].Value);
+    }
 }

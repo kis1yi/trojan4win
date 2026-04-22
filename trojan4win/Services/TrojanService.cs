@@ -35,7 +35,7 @@ public class TrojanService : IDisposable
     private string GetTrojanPath()
     {
         var baseDir = AppContext.BaseDirectory;
-        return Path.Combine(baseDir, "Tools", "trojan", "trojan.exe");
+        return Path.Combine(baseDir, "Tools", "trojan", "trojan-go.exe");
     }
 
     public async Task StartAsync(Models.ServerConfig server, int localPort, string localAddr = "127.0.0.1", CancellationToken ct = default)
@@ -44,7 +44,7 @@ public class TrojanService : IDisposable
 
         var trojanPath = GetTrojanPath();
         if (!File.Exists(trojanPath))
-            throw new FileNotFoundException("trojan.exe not found. Place it in Tools/trojan/.", trojanPath);
+            throw new FileNotFoundException("trojan-go.exe not found. Place it in Tools/trojan/.", trojanPath);
 
         var configPath = WriteTrojanConfig(server, localPort, localAddr);
 
@@ -53,11 +53,13 @@ public class TrojanService : IDisposable
             StartInfo = new ProcessStartInfo
             {
                 FileName = trojanPath,
-                Arguments = $"-c \"{configPath}\"",
+                Arguments = $"-config \"{configPath}\"",
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
+                // trojan-go resolves default geoip.dat / geosite.dat relative to its working
+                // directory, so launch it from the binary's folder
                 WorkingDirectory = Path.GetDirectoryName(trojanPath)!
             },
             EnableRaisingEvents = true
@@ -88,7 +90,8 @@ public class TrojanService : IDisposable
         {
             if (_trojanProcess is { HasExited: false })
             {
-                _trojanProcess.Kill(true);
+                // trojan-go has no Windows clean-shutdown signal handler — kill the whole tree
+                _trojanProcess.Kill(entireProcessTree: true);
                 _trojanProcess.WaitForExit(3000);
             }
         }
@@ -136,6 +139,32 @@ public class TrojanService : IDisposable
         foreach (var a in (server.Alpn ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries))
             alpnList.Add(a.Trim());
 
+        // ssl block
+        var sslSni = string.IsNullOrWhiteSpace(server.Sni) ? server.RemoteAddr : server.Sni;
+        var ssl = new Dictionary<string, object>
+        {
+            ["verify"] = server.VerifyCert,
+            ["verify_hostname"] = server.VerifyCert,
+            ["cert"] = server.Cert,
+            ["sni"] = sslSni,
+            ["alpn"] = alpnList,
+            ["curves"] = server.Curves
+        };
+        if (!string.IsNullOrEmpty(server.Fingerprint))
+            ssl["fingerprint"] = server.Fingerprint;
+        if (server.Ech)
+        {
+            ssl["ech"] = true;
+            ssl["ech_config"] = server.EchConfig;
+        }
+
+        var tcp = new Dictionary<string, object>
+        {
+            ["no_delay"] = server.NoDelay,
+            ["keep_alive"] = server.KeepAlive,
+            ["prefer_ipv4"] = server.PreferIpv4
+        };
+
         var config = new Dictionary<string, object>
         {
             ["run_type"] = "client",
@@ -145,29 +174,88 @@ public class TrojanService : IDisposable
             ["remote_port"] = safeRemotePort,
             ["password"] = new[] { server.Password },
             ["log_level"] = server.TrojanLogLevel,
-            ["ssl"] = new Dictionary<string, object>
-            {
-                ["verify"] = server.VerifyCert,
-                ["verify_hostname"] = server.VerifyCert,
-                ["cert"] = server.Cert,
-                ["key"] = server.Key,
-                ["cipher"] = server.Cipher,
-                ["cipher_tls13"] = server.CipherTls13,
-                ["sni"] = string.IsNullOrWhiteSpace(server.Sni) ? server.RemoteAddr : server.Sni,
-                ["alpn"] = alpnList,
-                ["reuse_session"] = server.ReuseSession,
-                ["session_ticket"] = server.SessionTicket,
-                ["curves"] = server.Curves
-            },
-            ["tcp"] = new Dictionary<string, object>
-            {
-                ["no_delay"] = server.NoDelay,
-                ["keep_alive"] = server.KeepAlive,
-                ["reuse_port"] = server.ReusePort,
-                ["fast_open"] = server.FastOpen,
-                ["fast_open_qlen"] = server.FastOpenQlen
-            }
+            ["ssl"] = ssl,
+            ["tcp"] = tcp
         };
+
+        if (server.MuxEnabled)
+        {
+            // trojan-go requires receive_buffer ≥ stream_buffer; clamp upward silently
+            var receiveBuffer = server.MuxReceiveBuffer < server.MuxStreamBuffer
+                ? server.MuxStreamBuffer
+                : server.MuxReceiveBuffer;
+            config["mux"] = new Dictionary<string, object>
+            {
+                ["enabled"] = true,
+                ["concurrency"] = server.MuxConcurrency,
+                ["idle_timeout"] = server.MuxIdleTimeout,
+                ["stream_buffer"] = server.MuxStreamBuffer,
+                ["receive_buffer"] = receiveBuffer,
+                ["protocol"] = server.MuxProtocol
+            };
+        }
+
+        if (server.WebsocketEnabled)
+        {
+            config["websocket"] = new Dictionary<string, object>
+            {
+                ["enabled"] = true,
+                ["path"] = server.WebsocketPath,
+                ["host"] = server.WebsocketHost
+            };
+        }
+
+        if (server.ShadowsocksEnabled)
+        {
+            config["shadowsocks"] = new Dictionary<string, object>
+            {
+                ["enabled"] = true,
+                ["method"] = server.ShadowsocksMethod,
+                ["password"] = server.ShadowsocksPassword
+            };
+        }
+
+        if (server.RouterEnabled)
+        {
+            var bypass = new List<string>();
+            var proxy = new List<string>();
+            var block = new List<string>();
+            foreach (var rule in server.RouterRules)
+            {
+                if (string.IsNullOrWhiteSpace(rule.Policy) || string.IsNullOrWhiteSpace(rule.Type))
+                    continue;
+                var encoded = rule.Type + ":" + rule.Value;
+                switch (rule.Policy)
+                {
+                    case "bypass": bypass.Add(encoded); break;
+                    case "proxy": proxy.Add(encoded); break;
+                    case "block": block.Add(encoded); break;
+                }
+            }
+            config["router"] = new Dictionary<string, object>
+            {
+                ["enabled"] = true,
+                ["default_policy"] = server.RouterDefaultPolicy,
+                ["domain_strategy"] = server.RouterDomainStrategy,
+                ["geoip"] = server.RouterGeoip,
+                ["geosite"] = server.RouterGeosite,
+                ["bypass"] = bypass,
+                ["proxy"] = proxy,
+                ["block"] = block
+            };
+        }
+
+        if (server.ForwardProxyEnabled)
+        {
+            config["forward_proxy"] = new Dictionary<string, object>
+            {
+                ["enabled"] = true,
+                ["proxy_addr"] = server.ForwardProxyAddr,
+                ["proxy_port"] = server.ForwardProxyPort,
+                ["username"] = server.ForwardProxyUsername,
+                ["password"] = server.ForwardProxyPassword
+            };
+        }
 
         var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
         // CR-16: write to a temp file then rename atomically to prevent a corrupt
