@@ -1,10 +1,13 @@
 # Trojan-Go Proxy Client
 # Version: 1.1.7
 # Upstream (maintained fork): https://github.com/kis1yi/trojan-go
-# Release asset: trojan-go-windows-amd64.zip from https://github.com/kis1yi/trojan-go/releases/tag/v1.1.7
-# Extract trojan-go.exe (and geoip.dat / geosite.dat if bundled) into this directory.
-# Trojan Proxy Client
-# Version: 1.16.0
-# Download: https://github.com/trojan-gfw/trojan/releases/tag/v1.16.0
-# File: trojan-1.16.0-win.zip
-# Extract all contents into this directory.
+# Release page: https://github.com/kis1yi/trojan-go/releases/tag/v1.1.7
+# Release asset: trojan-go-windows-amd64.zip
+# Extract trojan-go.exe into this directory.
+#
+# Companion geo data files (downloaded by CI, not committed):
+#   geoip.dat    — from https://github.com/v2fly/geoip/releases/latest
+#   geosite.dat  — from https://github.com/v2fly/domain-list-community/releases/latest
+#                  (CI downloads dlc.dat and saves it as geosite.dat)
+# Both are placed alongside trojan-go.exe so trojan-go's default
+# router.geoip / router.geosite paths resolve.

@@ -6,11 +6,13 @@ on:
       version:
         description: "Release version (e.g. 1.2.0)"
         required: false
-        default: "1.0.0"
+        default: "1.1.0"
         type: string
 
 env:
-  TROJAN_URL: https://github.com/trojan-gfw/trojan/releases/download/v1.16.0/trojan-1.16.0-win.zip
+  TROJAN_URL: https://github.com/kis1yi/trojan-go/releases/download/v1.1.7/trojan-go-windows-amd64.zip
+  GEOIP_URL: https://github.com/v2fly/geoip/releases/latest/download/geoip.dat
+  GEOSITE_URL: https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat
   PROXIFYRE_URL: https://github.com/wiresock/proxifyre/releases/download/v2.2.0/ProxiFyre-v2.2.0-x64-signed.zip
   NDISAPI_URL: https://github.com/wiresock/ndisapi/releases/download/v3.6.2/Windows.Packet.Filter.3.6.2.1.x64.msi
 
@@ -30,7 +32,7 @@ jobs:
           dotnet-version: "8.0.x"
 
       # ── Tool downloads ────────────────────────────────────────────────────
-      - name: Download Trojan
+      - name: Download Trojan-Go
         shell: pwsh
         run: |
           Invoke-WebRequest -Uri $env:TROJAN_URL -OutFile trojan.zip
@@ -42,6 +44,12 @@ jobs:
             Move-Item trojan_tmp\* trojan4win/Tools/trojan/
           }
           Remove-Item trojan.zip, trojan_tmp -Recurse -Force
+
+      - name: Download geoip/geosite
+        shell: pwsh
+        run: |
+          Invoke-WebRequest -Uri $env:GEOIP_URL   -OutFile trojan4win/Tools/trojan/geoip.dat
+          Invoke-WebRequest -Uri $env:GEOSITE_URL -OutFile trojan4win/Tools/trojan/geosite.dat
 
       - name: Download ProxiFyre
         shell: pwsh
@@ -66,7 +74,9 @@ jobs:
         shell: pwsh
         run: |
           $missing = @()
-          if (-not (Test-Path 'trojan4win/Tools/trojan/trojan.exe'))       { $missing += 'trojan.exe' }
+          if (-not (Test-Path 'trojan4win/Tools/trojan/trojan-go.exe'))     { $missing += 'trojan-go.exe' }
+          if (-not (Test-Path 'trojan4win/Tools/trojan/geoip.dat'))         { $missing += 'geoip.dat' }
+          if (-not (Test-Path 'trojan4win/Tools/trojan/geosite.dat'))       { $missing += 'geosite.dat' }
           if (-not (Test-Path 'trojan4win/Tools/proxifyre/ProxiFyre.exe')) { $missing += 'ProxiFyre.exe' }
           if ($missing.Count -gt 0) {
             Write-Error "Missing tool binaries after download: $($missing -join ', ')"
