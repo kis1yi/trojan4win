@@ -100,7 +100,7 @@ public class BoolToPasswordCharConverter : IValueConverter
     {
         if (value is bool visible && visible)
             return '\0';
-        return '�';
+        return '\u2022';
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

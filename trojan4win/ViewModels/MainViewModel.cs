@@ -479,6 +479,39 @@ public partial class MainViewModel : ObservableObject, IDisposable
         SelectedRouterRule = null;
     }
 
+    [RelayCommand]
+    private async Task BrowseGeoipAsync() => await BrowseGeoFileAsync(isGeoip: true);
+
+    [RelayCommand]
+    private async Task BrowseGeositeAsync() => await BrowseGeoFileAsync(isGeoip: false);
+
+    private async Task BrowseGeoFileAsync(bool isGeoip)
+    {
+        if (EditingServer == null) return;
+        try
+        {
+            var lifetime = Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime;
+            var mainWindow = lifetime?.MainWindow;
+            if (mainWindow == null) return;
+
+            var files = await mainWindow.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = isGeoip ? "Select GeoIP file" : "Select GeoSite file",
+                AllowMultiple = false,
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("DAT Files") { Patterns = new[] { "*.dat" } }
+                }
+            });
+
+            if (files.Count == 0) return;
+            var path = files[0].Path.LocalPath;
+            if (isGeoip) EditingServer.RouterGeoip = path;
+            else EditingServer.RouterGeosite = path;
+        }
+        catch { /* ignore picker errors */ }
+    }
+
     // --- Router / Shadowsocks / Fingerprint combobox sources ---
     public List<string> RouterPolicyOptions { get; } = new() { "bypass", "proxy", "block" };
     public List<string> RouterRuleTypeOptions { get; } = new() { "domain", "full", "regexp", "cidr", "geoip", "geosite" };

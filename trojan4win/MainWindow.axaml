@@ -324,10 +324,39 @@
                             <Setter Property="CornerRadius" Value="8"/>
                             <Setter Property="Padding" Value="16,8"/>
                             <Setter Property="Margin" Value="0,2"/>
+                            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Style.Resources>
+                                <!-- Header background: keep sidebar color in every state -->
+                                <SolidColorBrush x:Key="ExpanderHeaderBackground" Color="#181825"/>
+                                <SolidColorBrush x:Key="ExpanderHeaderBackgroundPointerOver" Color="#181825"/>
+                                <SolidColorBrush x:Key="ExpanderHeaderBackgroundPressed" Color="#181825"/>
+                                <SolidColorBrush x:Key="ExpanderHeaderBackgroundDisabled" Color="#181825"/>
+                                <!-- Header border: invisible -->
+                                <SolidColorBrush x:Key="ExpanderHeaderBorderBrush" Color="#181825"/>
+                                <SolidColorBrush x:Key="ExpanderHeaderBorderBrushPointerOver" Color="#181825"/>
+                                <SolidColorBrush x:Key="ExpanderHeaderBorderBrushPressed" Color="#181825"/>
+                                <!-- Header text color: light by default, brighter on hover (matches Logs tabs) -->
+                                <SolidColorBrush x:Key="ExpanderHeaderForeground" Color="#CDD6F4"/>
+                                <SolidColorBrush x:Key="ExpanderHeaderForegroundPointerOver" Color="#FFFFFF"/>
+                                <SolidColorBrush x:Key="ExpanderHeaderForegroundPressed" Color="#FFFFFF"/>
+                                <!-- Chevron: keep background transparent over the sidebar color, recolor glyph on hover -->
+                                <SolidColorBrush x:Key="ExpanderChevronBackground" Color="Transparent"/>
+                                <SolidColorBrush x:Key="ExpanderChevronBackgroundPointerOver" Color="Transparent"/>
+                                <SolidColorBrush x:Key="ExpanderChevronBackgroundPressed" Color="Transparent"/>
+                                <SolidColorBrush x:Key="ExpanderChevronBorderBrush" Color="Transparent"/>
+                                <SolidColorBrush x:Key="ExpanderChevronBorderBrushPointerOver" Color="Transparent"/>
+                                <SolidColorBrush x:Key="ExpanderChevronBorderBrushPressed" Color="Transparent"/>
+                                <SolidColorBrush x:Key="ExpanderChevronForeground" Color="#CDD6F4"/>
+                                <SolidColorBrush x:Key="ExpanderChevronForegroundPointerOver" Color="#FFFFFF"/>
+                                <SolidColorBrush x:Key="ExpanderChevronForegroundPressed" Color="#FFFFFF"/>
+                            </Style.Resources>
                         </Style>
                         <Style Selector="Expander /template/ ToggleButton">
                             <Setter Property="Foreground" Value="#CDD6F4"/>
                             <Setter Property="FontWeight" Value="SemiBold"/>
+                            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                         </Style>
                         <Style Selector="Expander TextBlock.fieldLabel">
                             <Setter Property="VerticalAlignment" Value="Center"/>
@@ -341,6 +370,8 @@
                             <Setter Property="Margin" Value="0,4"/>
                             <Setter Property="CornerRadius" Value="4"/>
                             <Setter Property="Padding" Value="8,4"/>
+                            <Setter Property="BorderBrush" Value="#585B70"/>
+                            <Setter Property="BorderThickness" Value="1"/>
                         </Style>
                         <Style Selector="Expander ComboBox">
                             <Setter Property="Background" Value="#45475A"/>
@@ -476,9 +507,19 @@
                                 <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding RouterDomainStrategyOptions}"
                                           SelectedItem="{Binding EditingServer.RouterDomainStrategy}" Width="200" HorizontalAlignment="Left"/>
                                 <TextBlock Grid.Row="3" Classes="fieldLabel" Text="GeoIP File"/>
-                                <TextBox Grid.Row="3" Grid.Column="1" Classes="fieldInput" Text="{Binding EditingServer.RouterGeoip}"/>
+                                <Grid Grid.Row="3" Grid.Column="1" ColumnDefinitions="*,Auto">
+                                    <TextBox Grid.Column="0" Classes="fieldInput" Text="{Binding EditingServer.RouterGeoip}"/>
+                                    <Button Grid.Column="1" Content="Browse" Command="{Binding BrowseGeoipCommand}"
+                                            Background="#45475A" Foreground="#CDD6F4" Padding="10,4" CornerRadius="4"
+                                            Margin="6,4,0,4" VerticalAlignment="Center"/>
+                                </Grid>
                                 <TextBlock Grid.Row="4" Classes="fieldLabel" Text="GeoSite File"/>
-                                <TextBox Grid.Row="4" Grid.Column="1" Classes="fieldInput" Text="{Binding EditingServer.RouterGeosite}"/>
+                                <Grid Grid.Row="4" Grid.Column="1" ColumnDefinitions="*,Auto">
+                                    <TextBox Grid.Column="0" Classes="fieldInput" Text="{Binding EditingServer.RouterGeosite}"/>
+                                    <Button Grid.Column="1" Content="Browse" Command="{Binding BrowseGeositeCommand}"
+                                            Background="#45475A" Foreground="#CDD6F4" Padding="10,4" CornerRadius="4"
+                                            Margin="6,4,0,4" VerticalAlignment="Center"/>
+                                </Grid>
                             </Grid>
                             <TextBlock Text="Rules" FontWeight="SemiBold" FontSize="12" Foreground="#A6ADC8" Margin="0,8,0,2"/>
                             <DataGrid x:Name="RouterRulesGrid"
@@ -490,9 +531,47 @@
                                       Foreground="#CDD6F4"
                                       HeadersVisibility="Column"
                                       GridLinesVisibility="Horizontal"
+                                      SelectionMode="Single"
+                                      BorderBrush="#585B70"
+                                      BorderThickness="1"
+                                      CornerRadius="4"
                                       MinHeight="140">
+                                <DataGrid.Resources>
+                                    <!-- Make the cell "current"/focus rectangles invisible -->
+                                    <SolidColorBrush x:Key="DataGridCurrencyVisualPrimaryBrush" Color="Transparent"/>
+                                    <SolidColorBrush x:Key="DataGridCellFocusVisualPrimaryBrush" Color="Transparent"/>
+                                    <SolidColorBrush x:Key="DataGridCellFocusVisualSecondaryBrush" Color="Transparent"/>
+                                </DataGrid.Resources>
+                                <DataGrid.Styles>
+                                    <Style Selector="DataGridColumnHeader">
+                                        <Setter Property="Background" Value="#181825"/>
+                                        <Setter Property="Foreground" Value="#CDD6F4"/>
+                                    </Style>
+                                    <!-- Suppress white selection/current rectangle on cell click -->
+                                    <Style Selector="DataGridCell">
+                                        <Setter Property="BorderBrush" Value="Transparent"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                        <Setter Property="FocusAdorner" Value="{x:Null}"/>
+                                    </Style>
+                                    <Style Selector="DataGridCell:current">
+                                        <Setter Property="BorderBrush" Value="Transparent"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                    </Style>
+                                    <Style Selector="DataGridCell:focus">
+                                        <Setter Property="BorderBrush" Value="Transparent"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                    </Style>
+                                    <Style Selector="DataGridCell:selected">
+                                        <Setter Property="BorderBrush" Value="Transparent"/>
+                                        <Setter Property="BorderThickness" Value="0"/>
+                                    </Style>
+                                    <Style Selector="DataGridCell /template/ Rectangle">
+                                        <Setter Property="Stroke" Value="Transparent"/>
+                                        <Setter Property="StrokeThickness" Value="0"/>
+                                    </Style>
+                                </DataGrid.Styles>
                                 <DataGrid.Columns>
-                                    <DataGridTemplateColumn Header="Policy" Width="120">
+                                    <DataGridTemplateColumn Header="Policy" Width="*" MinWidth="150">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Policy}" VerticalAlignment="Center" Margin="6,0"/>
@@ -500,12 +579,16 @@
                                         </DataGridTemplateColumn.CellTemplate>
                                         <DataGridTemplateColumn.CellEditingTemplate>
                                             <DataTemplate>
-                                                <ComboBox ItemsSource="{Binding $parent[DataGrid].((vm:MainViewModel)DataContext).RouterPolicyOptions}"
-                                                          SelectedItem="{Binding Policy}"/>
+                                                <ComboBox MinWidth="140" HorizontalAlignment="Left" Margin="6,0,0,0"
+                                                          SelectedItem="{Binding Policy}">
+                                                    <x:String>bypass</x:String>
+                                                    <x:String>proxy</x:String>
+                                                    <x:String>block</x:String>
+                                                </ComboBox>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellEditingTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTemplateColumn Header="Type" Width="120">
+                                    <DataGridTemplateColumn Header="Type" Width="*" MinWidth="150">
                                         <DataGridTemplateColumn.CellTemplate>
                                             <DataTemplate>
                                                 <TextBlock Text="{Binding Type}" VerticalAlignment="Center" Margin="6,0"/>
@@ -513,17 +596,24 @@
                                         </DataGridTemplateColumn.CellTemplate>
                                         <DataGridTemplateColumn.CellEditingTemplate>
                                             <DataTemplate>
-                                                <ComboBox ItemsSource="{Binding $parent[DataGrid].((vm:MainViewModel)DataContext).RouterRuleTypeOptions}"
-                                                          SelectedItem="{Binding Type}"/>
+                                                <ComboBox MinWidth="140" HorizontalAlignment="Left" Margin="6,0,0,0"
+                                                          SelectedItem="{Binding Type}">
+                                                    <x:String>domain</x:String>
+                                                    <x:String>full</x:String>
+                                                    <x:String>regexp</x:String>
+                                                    <x:String>cidr</x:String>
+                                                    <x:String>geoip</x:String>
+                                                    <x:String>geosite</x:String>
+                                                </ComboBox>
                                             </DataTemplate>
                                         </DataGridTemplateColumn.CellEditingTemplate>
                                     </DataGridTemplateColumn>
-                                    <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="*"/>
+                                    <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="*" MinWidth="150"/>
                                 </DataGrid.Columns>
                             </DataGrid>
                             <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
-                                <Button Content="Add" Command="{Binding AddRouterRuleCommand}" Background="#45475A" Foreground="#CDD6F4" Padding="10,4" CornerRadius="4"/>
-                                <Button Content="Delete" Command="{Binding RemoveRouterRuleCommand}" Background="#C47A8E" Foreground="#1E1E2E" Padding="10,4" CornerRadius="4"/>
+                                <Button Content="Add" Command="{Binding AddRouterRuleCommand}" Background="#45475A" Foreground="#CDD6F4" Padding="12,4" CornerRadius="4"/>
+                                <Button Classes="btn-danger" Content="Delete" Command="{Binding RemoveRouterRuleCommand}" Background="#C47A8E" Foreground="#1E1E2E" Padding="12,4" CornerRadius="4"/>
                             </StackPanel>
                         </StackPanel>
                     </Expander>
