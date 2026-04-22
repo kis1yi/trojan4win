@@ -3,7 +3,7 @@
 ; Then compile this script with Inno Setup
 
 #define MyAppName "trojan4win"
-#define MyAppVersion "1.0.0"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "trojan4win"
 #define MyAppExeName "trojan4win.exe"
 
@@ -51,7 +51,7 @@ Name: "installwpf"; Description: "Install Windows Packet Filter (NDISAPI) driver
 ; Published application output
 Source: "trojan4win\bin\Release\net8.0-windows\win-x64\publish\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-; Trojan binary and dependencies - place trojan.exe in Tools\trojan\ before building
+; Trojan-Go binary and geo data files - place trojan-go.exe, geoip.dat, and geosite.dat in Tools\trojan\ before building
 Source: "trojan4win\Tools\trojan\*"; DestDir: "{app}\Tools\trojan"; Excludes: "*.gitkeep,README.md"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; Proxifyre binary and dependencies - place proxifyre.exe in Tools\proxifyre\ before building

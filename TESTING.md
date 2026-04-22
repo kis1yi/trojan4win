@@ -43,13 +43,15 @@ dotnet test --filter "FullyQualifiedName~AddServer_ServerAppearsInViewModel"
 
 ## Test Architecture
 
-**88 tests** across three categories:
+**126 tests** across three categories:
 
-| Category | Tests | Classes |
+| Category | Attributes | Classes |
 |---|---|---|
-| Service & model unit tests | 55 | `SettingsServiceTests`, `ServerConfigTests`, `TrojanServiceConfigTests`, `ProxifyreServiceConfigTests`, `TrafficMonitorTests`, `PingServiceTests` |
-| ViewModel unit tests | 27 | `MainViewModelFormatTests` (18 — pure static helpers), `MainViewModelCommandTests` (9 — collection commands) |
-| Headless UI integration tests | 6 | `UITests` (add/delete server, switch server, connect/disconnect) |
+| Service & model unit tests | 83 | `SettingsServiceTests` (8), `ServerConfigTests` (6), `TrojanServiceConfigTests` (36), `ProxifyreServiceConfigTests` (20), `TrafficMonitorTests` (10), `PingServiceTests` (3) |
+| ViewModel unit tests | 15 | `MainViewModelFormatTests` (5 — `[Theory]`/`[Fact]` format helpers), `MainViewModelCommandTests` (10 — collection and filter-mode commands) |
+| Headless UI integration tests | 7 | `UITests` (add/delete server, switch server, connect/disconnect, filter-mode binding) |
+
+Total attribute count: **105** (`[Fact]` + `[Theory]` + `[AvaloniaFact]` attributes; `[Theory]` entries with multiple `[InlineData]` rows count as one attribute each).
 
 All ViewModel and UI tests use `[AvaloniaFact]` to run on the Avalonia UI thread via `Avalonia.Headless.XUnit`.
 
@@ -61,7 +63,7 @@ All ViewModel and UI tests use `[AvaloniaFact]` to run on the Avalonia UI thread
 
 ### Adaptive Connect test
 
-`Connect_ThenDisconnect_StateReturnsToDisconnected` works on machines where `trojan.exe`/`proxifyre.exe` are present in the build output (dev machines) **and** where they are absent (CI). If executables exist, it verifies the full connect → disconnect round-trip; if absent, it verifies the error-handling flow.
+`Connect_ThenDisconnect_StateReturnsToDisconnected` works on machines where `trojan-go.exe`/`proxifyre.exe` are present in the build output (dev machines) **and** where they are absent (CI). If executables exist, it verifies the full connect → disconnect round-trip; if absent, it verifies the error-handling flow.
 
 ### PingService ICMP dependency
 

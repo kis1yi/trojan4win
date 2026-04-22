@@ -2,8 +2,8 @@
 
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](LICENSE)
 
-**trojan4win** is a Windows GUI client for the [Trojan](https://github.com/trojan-gfw/trojan)
-proxy protocol. It routes system-wide traffic through a Trojan server using
+**trojan4win** is a Windows GUI client powered by [trojan-go](https://github.com/kis1yi/trojan-go),
+an extended Trojan proxy implementation. It routes system-wide traffic through a Trojan server using
 [ProxiFyre](https://github.com/wiresock/proxifyre) (SOCKS5 system proxy) and the
 [Windows Packet Filter (NDISAPI)](https://github.com/wiresock/ndisapi) kernel driver —
 no manual proxy configuration required.
@@ -16,13 +16,25 @@ no manual proxy configuration required.
   usage statistics and auto-ping latency display
 - **System-wide routing** — ProxiFyre + NDISAPI driver intercept traffic at the kernel
   level, covering apps that do not respect system proxy settings
-- **TCP and UDP** — both protocols are forwarded through the Trojan tunnel
-- **Per-app exclusions** — define process names that bypass the proxy
+- **TCP and UDP** — both protocols are forwarded through the trojan-go tunnel
+- **Process filter modes** — exclude listed apps from the proxy (default) or route only
+  listed apps through the proxy; switchable per-session (new in v1.1.0)
+- **Mux multiplexing** — reduce TLS handshake overhead with trojan-go's built-in
+  connection multiplexer (smux / yamux / mplex)
+- **WebSocket transport** — tunnel traffic over WebSocket for CDN and reverse-proxy
+  compatibility
+- **Shadowsocks AEAD secondary encryption** — optional AES-GCM or ChaCha20 layer
+  wrapping the Trojan stream
+- **Structured router rules** — domain / IP / CIDR / GeoIP / GeoSite rules with
+  per-rule bypass, proxy, or block policy
+- **Forward proxy** — chain trojan-go through an upstream SOCKS5 proxy
+- **ECH and uTLS fingerprinting** — Encrypted ClientHello support and browser TLS
+  fingerprint spoofing (Firefox, Chrome, and others)
 - **Traffic monitoring** — real-time upload/download speed and per-session totals
 - **System tray** — minimize to tray; app stays running in the background
 - **Auto-start with Windows** — optional registry-based startup entry
 - **Auto-connect on launch** — reconnect to the last active server automatically
-- **Log viewers** — inspect live Trojan and ProxiFyre log output from within the UI
+- **Log viewers** — inspect live trojan-go and ProxiFyre log output from within the UI
 
 ---
 
@@ -47,8 +59,8 @@ no manual proxy configuration required.
    want system-wide routing (recommended).
 3. Launch **trojan4win** from the Start Menu or desktop shortcut.
 
-> **Note:** The installer bundles the .NET 8 Runtime, ProxiFyre, and the Trojan binary.
-> No manual dependency setup is needed for regular users.
+> **Note:** The installer bundles the .NET 8 Runtime, ProxiFyre, the trojan-go client,
+> and V2Fly geo data files. No manual dependency setup is needed for regular users.
 
 ---
 
@@ -108,7 +120,9 @@ manually before building locally. The GitHub Actions CI workflow downloads them 
 
 | Tool | Version | Download | Destination |
 |---|---|---|---|
-| Trojan | 1.16.0 | [trojan-1.16.0-win.zip](https://github.com/trojan-gfw/trojan/releases/tag/v1.16.0) | `trojan4win/Tools/trojan/` |
+| trojan-go | 1.1.7 | [trojan-go-windows-amd64.zip](https://github.com/kis1yi/trojan-go/releases/tag/v1.1.7) | `trojan4win/Tools/trojan/` |
+| geoip.dat | latest | [geoip.dat](https://github.com/v2fly/geoip/releases/latest) — from v2fly/geoip; placed next to trojan-go.exe by CI | `trojan4win/Tools/trojan/` |
+| geosite.dat | latest | [dlc.dat](https://github.com/v2fly/domain-list-community/releases/latest) — from v2fly/domain-list-community, saved as geosite.dat by CI | `trojan4win/Tools/trojan/` |
 | ProxiFyre | 2.2.0 | [ProxiFyre-v2.2.0-x64-signed.zip](https://github.com/wiresock/proxifyre/releases/tag/v2.2.0) | `trojan4win/Tools/proxifyre/` |
 | NDISAPI driver | 3.6.2.1 | [Windows.Packet.Filter.3.6.2.1.x64.msi](https://github.com/wiresock/ndisapi/releases) | `trojan4win/Tools/ndisapi/` |
 
@@ -144,7 +158,7 @@ Output is written to `installer_output/`.
 
 ## Running Tests
 
-The test suite has **88 tests** covering services, ViewModels, and headless UI integration:
+The test suite has **126 tests** covering services, ViewModels, and headless UI integration:
 
 ```bash
 dotnet test
@@ -158,7 +172,7 @@ known considerations (parallelism, ICMP, culture pinning, headless Avalonia limi
 ## Contributing
 
 1. Fork the repository and create a feature branch.
-2. Make your changes — the existing 88-test suite acts as a safety net.
+2. Make your changes — the existing 126-test suite acts as a safety net.
 3. Ensure `dotnet test` passes and `dotnet build -c Release` succeeds.
 4. Open a pull request with a clear description of what changed and why.
 
@@ -171,7 +185,7 @@ from a matching unit test in `trojan4win.Tests/`.
 
 trojan4win is built on top of three excellent open-source projects:
 
-- **[trojan-gfw/trojan](https://github.com/trojan-gfw/trojan)** — the Trojan proxy
+- **[kis1yi/trojan-go](https://github.com/kis1yi/trojan-go)** — the extended Trojan proxy
   client that handles the TLS tunnel to the server
 - **[wiresock/proxifyre](https://github.com/wiresock/proxifyre)** — the SOCKS5
   system-wide proxy that feeds traffic from all processes into Trojan
@@ -190,7 +204,9 @@ each governed by its own license:
 
 | Tool | License |
 |------|---------|
-| [trojan](https://github.com/trojan-gfw/trojan) | [GPL-3.0](https://github.com/trojan-gfw/trojan/blob/master/LICENSE) |
+| [trojan-go](https://github.com/kis1yi/trojan-go) | [GPL-3.0](https://github.com/kis1yi/trojan-go/blob/master/LICENSE) |
+| [geoip.dat](https://github.com/v2fly/geoip) | [see upstream](https://github.com/v2fly/geoip/blob/release/LICENSE) |
+| [geosite.dat](https://github.com/v2fly/domain-list-community) | [MIT](https://github.com/v2fly/domain-list-community/blob/master/LICENSE) |
 | [ProxiFyre](https://github.com/wiresock/proxifyre) | [AGPL-3.0](https://github.com/wiresock/proxifyre/blob/main/LICENSE) |
 | [NDISAPI](https://github.com/wiresock/ndisapi) | [MIT](https://github.com/wiresock/ndisapi/blob/master/LICENSE) |
 
