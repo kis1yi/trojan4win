@@ -22,6 +22,7 @@
         <conv:InverseBoolConverter x:Key="InvBool"/>
         <conv:StringNotEmptyConverter x:Key="StrNotEmpty"/>
         <conv:BoolToPasswordCharConverter x:Key="BoolToPasswordChar"/>
+        <conv:BytesToMegabytesConverter x:Key="BytesToMB"/>
     </Window.Resources>
 
     <Window.Styles>
@@ -315,117 +316,242 @@
             <!-- EDIT SERVER PAGE -->
             <ScrollViewer IsVisible="{Binding CurrentPage, Converter={StaticResource PageEquals}, ConverterParameter=edit}">
                 <StackPanel Margin="20,16" Spacing="8">
+                    <StackPanel.Styles>
+                        <Style Selector="Expander">
+                            <Setter Property="Background" Value="#313244"/>
+                            <Setter Property="Foreground" Value="#CDD6F4"/>
+                            <Setter Property="CornerRadius" Value="8"/>
+                            <Setter Property="Padding" Value="16,8"/>
+                            <Setter Property="Margin" Value="0,2"/>
+                        </Style>
+                        <Style Selector="Expander /template/ ToggleButton">
+                            <Setter Property="Foreground" Value="#CDD6F4"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                        </Style>
+                        <Style Selector="Expander TextBlock.fieldLabel">
+                            <Setter Property="VerticalAlignment" Value="Center"/>
+                            <Setter Property="Foreground" Value="#A6ADC8"/>
+                            <Setter Property="FontSize" Value="13"/>
+                            <Setter Property="Margin" Value="0,4"/>
+                        </Style>
+                        <Style Selector="Expander TextBox.fieldInput">
+                            <Setter Property="Background" Value="#45475A"/>
+                            <Setter Property="Foreground" Value="#CDD6F4"/>
+                            <Setter Property="Margin" Value="0,4"/>
+                            <Setter Property="CornerRadius" Value="4"/>
+                            <Setter Property="Padding" Value="8,4"/>
+                        </Style>
+                        <Style Selector="Expander ComboBox">
+                            <Setter Property="Background" Value="#45475A"/>
+                            <Setter Property="Foreground" Value="#CDD6F4"/>
+                            <Setter Property="Margin" Value="0,4"/>
+                        </Style>
+                    </StackPanel.Styles>
+
                     <TextBlock Text="Edit Server" FontSize="18" FontWeight="SemiBold" Foreground="#CDD6F4"/>
 
-                    <!-- Basic -->
-                    <Border Background="#313244" CornerRadius="8" Padding="16,12">
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Basic" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4" Margin="0,0,0,4"/>
-                            <Grid ColumnDefinitions="120,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
-                                <Grid.Styles>
-                                    <Style Selector="TextBlock"><Setter Property="VerticalAlignment" Value="Center"/><Setter Property="Foreground" Value="#A6ADC8"/><Setter Property="FontSize" Value="13"/><Setter Property="Margin" Value="0,4"/></Style>
-                                    <Style Selector="TextBox"><Setter Property="Background" Value="#45475A"/><Setter Property="Foreground" Value="#CDD6F4"/><Setter Property="Margin" Value="0,4"/><Setter Property="CornerRadius" Value="4"/><Setter Property="Padding" Value="8,4"/></Style>
-                                </Grid.Styles>
-                                <TextBlock Grid.Row="0" Text="Name"/>
-                                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding EditName}"/>
-                                <TextBlock Grid.Row="1" Text="Region"/>
-                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EditRegion}" Watermark="e.g. US, DE, JP"/>
-                                <TextBlock Grid.Row="2" Text="Server Address"/>
-                                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding EditRemoteAddr}" Watermark="hostname or IP"/>
-                                <TextBlock Grid.Row="3" Text="Port"/>
-                                <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding EditRemotePort}"/>
-                                <TextBlock Grid.Row="4" Text="Password"/>
-                                <TextBox Grid.Row="4" Grid.Column="1"
-                                         Text="{Binding EditPassword}"
-                                         PasswordChar="{Binding IsPasswordVisible, Converter={StaticResource BoolToPasswordChar}}">
-                                    <TextBox.InnerRightContent>
-                                        <Button Command="{Binding TogglePasswordVisibilityCommand}"
-                                                Background="Transparent" Padding="4" Margin="0"
-                                                VerticalAlignment="Center" ToolTip.Tip="Show/Hide password" Cursor="Hand">
-                                            <Panel>
-                                                <PathIcon Width="14" Height="14" Foreground="#6C7086"
-                                                          IsVisible="{Binding IsPasswordVisible, Converter={StaticResource InvBool}}"
-                                                          Data="M12,9.0046246 C14.209139,9.0046246 16,10.7954856 16,13.0046246 C16,15.2137636 14.209139,17.0046246 12,17.0046246 C9.790861,17.0046246 8,15.2137636 8,13.0046246 C8,10.7954856 9.790861,9.0046246 12,9.0046246 Z M12,10.5046246 C10.6192881,10.5046246 9.5,11.6239127 9.5,13.0046246 C9.5,14.3853365 10.6192881,15.5046246 12,15.5046246 C13.3807119,15.5046246 14.5,14.3853365 14.5,13.0046246 C14.5,11.6239127 13.3807119,10.5046246 12,10.5046246 Z M12,5.5 C16.613512,5.5 20.5960869,8.65000641 21.7011157,13.0643865 C21.8017,13.4662019 21.557504,13.8734775 21.1556885,13.9740618 C20.7538731,14.0746462 20.3465976,13.8304502 20.2460132,13.4286347 C19.3071259,9.67795854 15.9213644,7 12,7 C8.07693257,7 4.69009765,9.68026417 3.75285786,13.4331499 C3.65249525,13.8350208 3.24535455,14.0794416 2.84348365,13.979079 C2.44161275,13.8787164 2.19719198,13.4715757 2.29755459,13.0697048 C3.4006459,8.65271806 7.38448293,5.5 12,5.5 Z"/>
-                                                <PathIcon Width="14" Height="14" Foreground="#CDD6F4"
-                                                          IsVisible="{Binding IsPasswordVisible}"
-                                                          Data="M2.21967 2.21967C1.9534 2.48594 1.9292 2.9026 2.14705 3.19621L2.21967 3.28033L6.25424 7.3149C4.33225 8.66437 2.89577 10.6799 2.29888 13.0644C2.1983 13.4662 2.4425 13.8735 2.84431 13.9741C3.24613 14.0746 3.6534 13.8305 3.75399 13.4286C4.28346 11.3135 5.59112 9.53947 7.33416 8.39452L9.14379 10.2043C8.43628 10.9258 8 11.9143 8 13.0046C8 15.2138 9.79086 17.0046 12 17.0046C13.0904 17.0046 14.0788 16.5683 14.8004 15.8608L20.7197 21.7803C21.0126 22.0732 21.4874 22.0732 21.7803 21.7803C22.0466 21.5141 22.0708 21.0974 21.8529 20.8038L21.7803 20.7197L15.6668 14.6055L15.668 14.604L14.4679 13.4061L11.598 10.5368L11.6 10.536L8.71877 7.65782L8.72 7.656L7.58672 6.52549L3.28033 2.21967C2.98744 1.92678 2.51256 1.92678 2.21967 2.21967ZM10.2041 11.2655L13.7392 14.8006C13.2892 15.2364 12.6759 15.5046 12 15.5046C10.6193 15.5046 9.5 14.3853 9.5 13.0046C9.5 12.3287 9.76824 11.7154 10.2041 11.2655ZM12 5.5C10.9997 5.5 10.0291 5.64807 9.11109 5.925L10.3481 7.16119C10.8839 7.05532 11.4364 7 12 7C15.9231 7 19.3099 9.68026 20.2471 13.4332C20.3475 13.835 20.7546 14.0794 21.1565 13.9791C21.5584 13.8787 21.8028 13.4716 21.7024 13.0697C20.5994 8.65272 16.6155 5.5 12 5.5ZM12.1947 9.00928L15.996 12.81C15.8942 10.7531 14.2472 9.10764 12.1947 9.00928Z"/>
-                                            </Panel>
-                                        </Button>
-                                    </TextBox.InnerRightContent>
-                                </TextBox>
-                            </Grid>
-                        </StackPanel>
-                    </Border>
+                    <!-- 1. Basic -->
+                    <Expander Header="Basic" IsExpanded="True">
+                        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                            <TextBlock Grid.Row="0" Classes="fieldLabel" Text="Name"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" Classes="fieldInput" Text="{Binding EditName}"/>
+                            <TextBlock Grid.Row="1" Classes="fieldLabel" Text="Region"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Classes="fieldInput" Text="{Binding EditRegion}" Watermark="e.g. US, DE, JP"/>
+                            <TextBlock Grid.Row="2" Classes="fieldLabel" Text="Server Address"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Classes="fieldInput" Text="{Binding EditRemoteAddr}" Watermark="hostname or IP"/>
+                            <TextBlock Grid.Row="3" Classes="fieldLabel" Text="Port"/>
+                            <TextBox Grid.Row="3" Grid.Column="1" Classes="fieldInput" Text="{Binding EditRemotePort}"/>
+                            <TextBlock Grid.Row="4" Classes="fieldLabel" Text="Password"/>
+                            <TextBox Grid.Row="4" Grid.Column="1" Classes="fieldInput"
+                                     Text="{Binding EditPassword}"
+                                     PasswordChar="{Binding IsPasswordVisible, Converter={StaticResource BoolToPasswordChar}}">
+                                <TextBox.InnerRightContent>
+                                    <Button Command="{Binding TogglePasswordVisibilityCommand}"
+                                            Background="Transparent" Padding="4" Margin="0"
+                                            VerticalAlignment="Center" ToolTip.Tip="Show/Hide password" Cursor="Hand">
+                                        <Panel>
+                                            <PathIcon Width="14" Height="14" Foreground="#6C7086"
+                                                      IsVisible="{Binding IsPasswordVisible, Converter={StaticResource InvBool}}"
+                                                      Data="M12,9.0046246 C14.209139,9.0046246 16,10.7954856 16,13.0046246 C16,15.2137636 14.209139,17.0046246 12,17.0046246 C9.790861,17.0046246 8,15.2137636 8,13.0046246 C8,10.7954856 9.790861,9.0046246 12,9.0046246 Z M12,10.5046246 C10.6192881,10.5046246 9.5,11.6239127 9.5,13.0046246 C9.5,14.3853365 10.6192881,15.5046246 12,15.5046246 C13.3807119,15.5046246 14.5,14.3853365 14.5,13.0046246 C14.5,11.6239127 13.3807119,10.5046246 12,10.5046246 Z M12,5.5 C16.613512,5.5 20.5960869,8.65000641 21.7011157,13.0643865 C21.8017,13.4662019 21.557504,13.8734775 21.1556885,13.9740618 C20.7538731,14.0746462 20.3465976,13.8304502 20.2460132,13.4286347 C19.3071259,9.67795854 15.9213644,7 12,7 C8.07693257,7 4.69009765,9.68026417 3.75285786,13.4331499 C3.65249525,13.8350208 3.24535455,14.0794416 2.84348365,13.979079 C2.44161275,13.8787164 2.19719198,13.4715757 2.29755459,13.0697048 C3.4006459,8.65271806 7.38448293,5.5 12,5.5 Z"/>
+                                            <PathIcon Width="14" Height="14" Foreground="#CDD6F4"
+                                                      IsVisible="{Binding IsPasswordVisible}"
+                                                      Data="M2.21967 2.21967C1.9534 2.48594 1.9292 2.9026 2.14705 3.19621L2.21967 3.28033L6.25424 7.3149C4.33225 8.66437 2.89577 10.6799 2.29888 13.0644C2.1983 13.4662 2.4425 13.8735 2.84431 13.9741C3.24613 14.0746 3.6534 13.8305 3.75399 13.4286C4.28346 11.3135 5.59112 9.53947 7.33416 8.39452L9.14379 10.2043C8.43628 10.9258 8 11.9143 8 13.0046C8 15.2138 9.79086 17.0046 12 17.0046C13.0904 17.0046 14.0788 16.5683 14.8004 15.8608L20.7197 21.7803C21.0126 22.0732 21.4874 22.0732 21.7803 21.7803C22.0466 21.5141 22.0708 21.0974 21.8529 20.8038L21.7803 20.7197L15.6668 14.6055L15.668 14.604L14.4679 13.4061L11.598 10.5368L11.6 10.536L8.71877 7.65782L8.72 7.656L7.58672 6.52549L3.28033 2.21967C2.98744 1.92678 2.51256 1.92678 2.21967 2.21967ZM10.2041 11.2655L13.7392 14.8006C13.2892 15.2364 12.6759 15.5046 12 15.5046C10.6193 15.5046 9.5 14.3853 9.5 13.0046C9.5 12.3287 9.76824 11.7154 10.2041 11.2655ZM12 5.5C10.9997 5.5 10.0291 5.64807 9.11109 5.925L10.3481 7.16119C10.8839 7.05532 11.4364 7.16119 12 7.16119C15.9231 7 19.3099 9.68026 20.2471 13.4332C20.3475 13.835 20.7546 14.0794 21.1565 13.9791C21.5584 13.8787 21.8028 13.4716 21.7024 13.0697C20.5994 8.65272 16.6155 5.5 12 5.5ZM12.1947 9.00928L15.996 12.81C15.8942 10.7531 14.2472 9.10764 12.1947 9.00928Z"/>
+                                        </Panel>
+                                    </Button>
+                                </TextBox.InnerRightContent>
+                            </TextBox>
+                        </Grid>
+                    </Expander>
 
-                    <!-- SSL Settings -->
-                    <Border Background="#313244" CornerRadius="8" Padding="16,12">
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="SSL" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4" Margin="0,0,0,4"/>
-                            <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
-                                <Grid.Styles>
-                                    <Style Selector="TextBlock"><Setter Property="VerticalAlignment" Value="Center"/><Setter Property="Foreground" Value="#A6ADC8"/><Setter Property="FontSize" Value="13"/><Setter Property="Margin" Value="0,4"/></Style>
-                                    <Style Selector="TextBox"><Setter Property="Background" Value="#45475A"/><Setter Property="Foreground" Value="#CDD6F4"/><Setter Property="Margin" Value="0,4"/><Setter Property="CornerRadius" Value="4"/><Setter Property="Padding" Value="8,4"/></Style>
-                                </Grid.Styles>
-                                <TextBlock Grid.Row="0" Text="SNI"/>
-                                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding EditSni}" Watermark="leave empty to use server address"/>
-                                <TextBlock Grid.Row="1" Text="ALPN"/>
-                                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EditAlpn}"/>
-                                <TextBlock Grid.Row="2" Text="Verify Certificate"/>
-                                <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding EditVerifyCert}" Margin="0,4"/>
-                                <TextBlock Grid.Row="3" Text="Cipher"/>
-                                <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding EditCipher}" TextWrapping="Wrap" AcceptsReturn="False"/>
-                                <TextBlock Grid.Row="4" Text="Cipher TLS 1.3"/>
-                                <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding EditCipherTls13}"/>
-                                <TextBlock Grid.Row="5" Text="Cert"/>
-                                <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding EditCert}" Watermark="path to certificate file"/>
-                                <TextBlock Grid.Row="6" Text="Key"/>
-                                <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding EditKey}" Watermark="path to key file"/>
-                                <TextBlock Grid.Row="7" Text="Reuse Session"/>
-                                <CheckBox Grid.Row="7" Grid.Column="1" IsChecked="{Binding EditReuseSession}" Margin="0,4"/>
-                                <TextBlock Grid.Row="8" Text="Session Ticket"/>
-                                <CheckBox Grid.Row="8" Grid.Column="1" IsChecked="{Binding EditSessionTicket}" Margin="0,4"/>
-                                <TextBlock Grid.Row="9" Text="Curves"/>
-                                <TextBox Grid.Row="9" Grid.Column="1" Text="{Binding EditCurves}" Watermark="leave empty for default"/>
-                            </Grid>
-                        </StackPanel>
-                    </Border>
+                    <!-- 2. TLS / SSL -->
+                    <Expander Header="TLS / SSL" IsExpanded="False">
+                        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                            <TextBlock Grid.Row="0" Classes="fieldLabel" Text="Verify Certificate"/>
+                            <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding EditVerifyCert}" Margin="0,4"/>
+                            <TextBlock Grid.Row="1" Classes="fieldLabel" Text="SNI"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Classes="fieldInput" Text="{Binding EditSni}" Watermark="leave empty to use server address"/>
+                            <TextBlock Grid.Row="2" Classes="fieldLabel" Text="ALPN (CSV)"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Classes="fieldInput" Text="{Binding EditAlpn}"/>
+                            <TextBlock Grid.Row="3" Classes="fieldLabel" Text="Cert"/>
+                            <TextBox Grid.Row="3" Grid.Column="1" Classes="fieldInput" Text="{Binding EditCert}" Watermark="path to certificate file"/>
+                            <TextBlock Grid.Row="4" Classes="fieldLabel" Text="Curves"/>
+                            <TextBox Grid.Row="4" Grid.Column="1" Classes="fieldInput" Text="{Binding EditCurves}" Watermark="leave empty for default"/>
+                            <TextBlock Grid.Row="5" Classes="fieldLabel" Text="Fingerprint"/>
+                            <ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{Binding FingerprintOptions}"
+                                      SelectedItem="{Binding EditingServer.Fingerprint}" Width="180" HorizontalAlignment="Left"/>
+                            <TextBlock Grid.Row="6" Classes="fieldLabel" Text="ECH Enabled"/>
+                            <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding EditingServer.Ech}" Margin="0,4"/>
+                            <TextBlock Grid.Row="7" Classes="fieldLabel" Text="ECH Config"/>
+                            <TextBox Grid.Row="7" Grid.Column="1" Classes="fieldInput" Text="{Binding EditingServer.EchConfig}" Watermark="base64 ECHConfigList"/>
+                        </Grid>
+                    </Expander>
 
-                    <!-- TCP Settings -->
-                    <Border Background="#313244" CornerRadius="8" Padding="16,12">
+                    <!-- 3. TCP -->
+                    <Expander Header="TCP" IsExpanded="False">
+                        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto">
+                            <TextBlock Grid.Row="0" Classes="fieldLabel" Text="No Delay"/>
+                            <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding EditNoDelay}" Margin="0,4"/>
+                            <TextBlock Grid.Row="1" Classes="fieldLabel" Text="Keep Alive"/>
+                            <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding EditKeepAlive}" Margin="0,4"/>
+                            <TextBlock Grid.Row="2" Classes="fieldLabel" Text="Prefer IPv4"/>
+                            <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding EditingServer.PreferIpv4}" Margin="0,4"/>
+                        </Grid>
+                    </Expander>
+
+                    <!-- 4. Mux -->
+                    <Expander Header="Mux" IsExpanded="False">
+                        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+                            <TextBlock Grid.Row="0" Classes="fieldLabel" Text="Enabled"/>
+                            <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding EditingServer.MuxEnabled}" Margin="0,4"/>
+                            <TextBlock Grid.Row="1" Classes="fieldLabel" Text="Concurrency"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Classes="fieldInput" Text="{Binding EditingServer.MuxConcurrency}" Width="120" HorizontalAlignment="Left"/>
+                            <TextBlock Grid.Row="2" Classes="fieldLabel" Text="Idle Timeout (s)"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Classes="fieldInput" Text="{Binding EditingServer.MuxIdleTimeout}" Width="120" HorizontalAlignment="Left"/>
+                            <TextBlock Grid.Row="3" Classes="fieldLabel" Text="Stream Buffer (MB)"/>
+                            <TextBox Grid.Row="3" Grid.Column="1" Classes="fieldInput" Text="{Binding EditingServer.MuxStreamBuffer, Converter={StaticResource BytesToMB}}" Width="120" HorizontalAlignment="Left"/>
+                            <TextBlock Grid.Row="4" Classes="fieldLabel" Text="Receive Buffer (MB)"/>
+                            <TextBox Grid.Row="4" Grid.Column="1" Classes="fieldInput" Text="{Binding EditingServer.MuxReceiveBuffer, Converter={StaticResource BytesToMB}}" Width="120" HorizontalAlignment="Left"/>
+                            <TextBlock Grid.Row="5" Classes="fieldLabel" Text="Protocol"/>
+                            <ComboBox Grid.Row="5" Grid.Column="1" ItemsSource="{Binding MuxProtocolOptions}"
+                                      SelectedItem="{Binding EditingServer.MuxProtocol}" Width="120" HorizontalAlignment="Left"/>
+                        </Grid>
+                    </Expander>
+
+                    <!-- 5. WebSocket -->
+                    <Expander Header="WebSocket" IsExpanded="False">
+                        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto">
+                            <TextBlock Grid.Row="0" Classes="fieldLabel" Text="Enabled"/>
+                            <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding EditingServer.WebsocketEnabled}" Margin="0,4"/>
+                            <TextBlock Grid.Row="1" Classes="fieldLabel" Text="Path"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Classes="fieldInput" Text="{Binding EditingServer.WebsocketPath}" Watermark="/ws"/>
+                            <TextBlock Grid.Row="2" Classes="fieldLabel" Text="Host"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Classes="fieldInput" Text="{Binding EditingServer.WebsocketHost}" Watermark="host header"/>
+                        </Grid>
+                    </Expander>
+
+                    <!-- 6. Shadowsocks AEAD -->
+                    <Expander Header="Shadowsocks AEAD" IsExpanded="False">
+                        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto">
+                            <TextBlock Grid.Row="0" Classes="fieldLabel" Text="Enabled"/>
+                            <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding EditingServer.ShadowsocksEnabled}" Margin="0,4"/>
+                            <TextBlock Grid.Row="1" Classes="fieldLabel" Text="Method"/>
+                            <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding ShadowsocksMethodOptions}"
+                                      SelectedItem="{Binding EditingServer.ShadowsocksMethod}" Width="220" HorizontalAlignment="Left"/>
+                            <TextBlock Grid.Row="2" Classes="fieldLabel" Text="Password"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Classes="fieldInput" Text="{Binding EditingServer.ShadowsocksPassword}"/>
+                        </Grid>
+                    </Expander>
+
+                    <!-- 7. Router -->
+                    <Expander Header="Router" IsExpanded="False">
                         <StackPanel Spacing="4">
-                            <TextBlock Text="TCP" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4" Margin="0,0,0,4"/>
                             <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
-                                <Grid.Styles>
-                                    <Style Selector="TextBlock"><Setter Property="VerticalAlignment" Value="Center"/><Setter Property="Foreground" Value="#A6ADC8"/><Setter Property="FontSize" Value="13"/><Setter Property="Margin" Value="0,4"/></Style>
-                                    <Style Selector="TextBox"><Setter Property="Background" Value="#45475A"/><Setter Property="Foreground" Value="#CDD6F4"/><Setter Property="Margin" Value="0,4"/><Setter Property="CornerRadius" Value="4"/><Setter Property="Padding" Value="8,4"/></Style>
-                                </Grid.Styles>
-                                <TextBlock Grid.Row="0" Text="No Delay"/>
-                                <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding EditNoDelay}" Margin="0,4"/>
-                                <TextBlock Grid.Row="1" Text="Keep Alive"/>
-                                <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding EditKeepAlive}" Margin="0,4"/>
-                                <TextBlock Grid.Row="2" Text="Reuse Port"/>
-                                <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding EditReusePort}" Margin="0,4"/>
-                                <TextBlock Grid.Row="3" Text="Fast Open"/>
-                                <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding EditFastOpen}" Margin="0,4"/>
-                                <TextBlock Grid.Row="4" Text="Fast Open Queue"/>
-                                <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding EditFastOpenQlen}" Width="80" HorizontalAlignment="Left"/>
+                                <TextBlock Grid.Row="0" Classes="fieldLabel" Text="Enabled"/>
+                                <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding EditingServer.RouterEnabled}" Margin="0,4"/>
+                                <TextBlock Grid.Row="1" Classes="fieldLabel" Text="Default Policy"/>
+                                <ComboBox Grid.Row="1" Grid.Column="1" ItemsSource="{Binding RouterPolicyOptions}"
+                                          SelectedItem="{Binding EditingServer.RouterDefaultPolicy}" Width="180" HorizontalAlignment="Left"/>
+                                <TextBlock Grid.Row="2" Classes="fieldLabel" Text="Domain Strategy"/>
+                                <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding RouterDomainStrategyOptions}"
+                                          SelectedItem="{Binding EditingServer.RouterDomainStrategy}" Width="200" HorizontalAlignment="Left"/>
+                                <TextBlock Grid.Row="3" Classes="fieldLabel" Text="GeoIP File"/>
+                                <TextBox Grid.Row="3" Grid.Column="1" Classes="fieldInput" Text="{Binding EditingServer.RouterGeoip}"/>
+                                <TextBlock Grid.Row="4" Classes="fieldLabel" Text="GeoSite File"/>
+                                <TextBox Grid.Row="4" Grid.Column="1" Classes="fieldInput" Text="{Binding EditingServer.RouterGeosite}"/>
                             </Grid>
+                            <TextBlock Text="Rules" FontWeight="SemiBold" FontSize="12" Foreground="#A6ADC8" Margin="0,8,0,2"/>
+                            <DataGrid x:Name="RouterRulesGrid"
+                                      ItemsSource="{Binding EditingServer.RouterRules}"
+                                      SelectedItem="{Binding SelectedRouterRule}"
+                                      AutoGenerateColumns="False"
+                                      CanUserResizeColumns="True"
+                                      Background="#1E1E2E"
+                                      Foreground="#CDD6F4"
+                                      HeadersVisibility="Column"
+                                      GridLinesVisibility="Horizontal"
+                                      MinHeight="140">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="Policy" Width="120">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Policy}" VerticalAlignment="Center" Margin="6,0"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                        <DataGridTemplateColumn.CellEditingTemplate>
+                                            <DataTemplate>
+                                                <ComboBox ItemsSource="{Binding $parent[DataGrid].((vm:MainViewModel)DataContext).RouterPolicyOptions}"
+                                                          SelectedItem="{Binding Policy}"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellEditingTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTemplateColumn Header="Type" Width="120">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding Type}" VerticalAlignment="Center" Margin="6,0"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                        <DataGridTemplateColumn.CellEditingTemplate>
+                                            <DataTemplate>
+                                                <ComboBox ItemsSource="{Binding $parent[DataGrid].((vm:MainViewModel)DataContext).RouterRuleTypeOptions}"
+                                                          SelectedItem="{Binding Type}"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellEditingTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="Value" Binding="{Binding Value}" Width="*"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,4,0,0">
+                                <Button Content="Add" Command="{Binding AddRouterRuleCommand}" Background="#45475A" Foreground="#CDD6F4" Padding="10,4" CornerRadius="4"/>
+                                <Button Content="Delete" Command="{Binding RemoveRouterRuleCommand}" Background="#C47A8E" Foreground="#1E1E2E" Padding="10,4" CornerRadius="4"/>
+                            </StackPanel>
                         </StackPanel>
-                    </Border>
+                    </Expander>
 
-                    <!-- Logging -->
-                    <Border Background="#313244" CornerRadius="8" Padding="16,12">
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Logging" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4" Margin="0,0,0,4"/>
-                            <Grid ColumnDefinitions="140,*" RowDefinitions="Auto">
-                                <TextBlock Text="Log Level" VerticalAlignment="Center" Foreground="#A6ADC8" FontSize="13" Margin="0,4"/>
-                                <ComboBox Grid.Column="1" ItemsSource="{Binding TrojanLogLevelOptions}"
-                                          SelectedIndex="{Binding EditTrojanLogLevel}"
-                                          Background="#45475A" Foreground="#CDD6F4" Margin="0,4"
-                                          Width="140" HorizontalAlignment="Left"/>
-                            </Grid>
-                        </StackPanel>
-                    </Border>
+                    <!-- 8. Forward Proxy -->
+                    <Expander Header="Forward Proxy" IsExpanded="False">
+                        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
+                            <TextBlock Grid.Row="0" Classes="fieldLabel" Text="Enabled"/>
+                            <CheckBox Grid.Row="0" Grid.Column="1" IsChecked="{Binding EditingServer.ForwardProxyEnabled}" Margin="0,4"/>
+                            <TextBlock Grid.Row="1" Classes="fieldLabel" Text="Proxy Address"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Classes="fieldInput" Text="{Binding EditingServer.ForwardProxyAddr}"/>
+                            <TextBlock Grid.Row="2" Classes="fieldLabel" Text="Proxy Port"/>
+                            <TextBox Grid.Row="2" Grid.Column="1" Classes="fieldInput" Text="{Binding EditingServer.ForwardProxyPort}" Width="120" HorizontalAlignment="Left"/>
+                            <TextBlock Grid.Row="3" Classes="fieldLabel" Text="Username"/>
+                            <TextBox Grid.Row="3" Grid.Column="1" Classes="fieldInput" Text="{Binding EditingServer.ForwardProxyUsername}"/>
+                            <TextBlock Grid.Row="4" Classes="fieldLabel" Text="Password"/>
+                            <TextBox Grid.Row="4" Grid.Column="1" Classes="fieldInput" Text="{Binding EditingServer.ForwardProxyPassword}"/>
+                        </Grid>
+                    </Expander>
+
+                    <!-- 9. Advanced -->
+                    <Expander Header="Advanced" IsExpanded="False">
+                        <Grid ColumnDefinitions="140,*" RowDefinitions="Auto">
+                            <TextBlock Grid.Row="0" Classes="fieldLabel" Text="Log Level"/>
+                            <ComboBox Grid.Column="1" ItemsSource="{Binding TrojanLogLevelOptions}"
+                                      SelectedIndex="{Binding EditTrojanLogLevel}"
+                                      Width="140" HorizontalAlignment="Left"/>
+                        </Grid>
+                    </Expander>
 
                     <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
                         <Button Classes="btn-green" Content="Save" Command="{Binding SaveServerCommand}" Background="#27AE60" Foreground="White" Padding="16,6" CornerRadius="4" FontWeight="SemiBold"/>

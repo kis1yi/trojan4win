@@ -46,8 +46,8 @@ public class PingToStringConverter : IValueConverter
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is int ping)
-            return ping < 0 ? "—" : $"{ping} ms";
-        return "—";
+            return ping < 0 ? "ï¿½" : $"{ping} ms";
+        return "ï¿½";
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -99,9 +99,32 @@ public class BoolToPasswordCharConverter : IValueConverter
     {
         if (value is bool visible && visible)
             return '\0';
-        return '•';
+        return 'ï¿½';
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => throw new NotSupportedException();
+}
+
+// Two-way converter between a raw byte count and the same value expressed in megabytes.
+// The UI shows MB (human-friendly); the model stores bytes (trojan-go's native unit).
+public class BytesToMegabytesConverter : IValueConverter
+{
+    private const double BytesPerMegabyte = 1024.0 * 1024.0;
+
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is int bytes)
+            return (bytes / BytesPerMegabyte).ToString("0.##", culture);
+        return "0";
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is string s && double.TryParse(s, NumberStyles.Float, culture, out var mb) && mb >= 0)
+            return (int)Math.Round(mb * BytesPerMegabyte);
+        if (value is double d && d >= 0)
+            return (int)Math.Round(d * BytesPerMegabyte);
+        return 0;
+    }
 }

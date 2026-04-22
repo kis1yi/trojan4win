@@ -1,3 +1,8 @@
+# Trojan-Go Proxy Client
+# Version: 1.1.7
+# Upstream (maintained fork): https://github.com/kis1yi/trojan-go
+# Release asset: trojan-go-windows-amd64.zip from https://github.com/kis1yi/trojan-go/releases/tag/v1.1.7
+# Extract trojan-go.exe (and geoip.dat / geosite.dat if bundled) into this directory.
 # Trojan Proxy Client
 # Version: 1.16.0
 # Download: https://github.com/trojan-gfw/trojan/releases/tag/v1.16.0
