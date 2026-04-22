@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using trojan4win.Models;
 
 namespace trojan4win.Services;
 
@@ -38,7 +39,7 @@ public class ProxifyreService : IDisposable
         return Path.Combine(AppContext.BaseDirectory, "Tools", "proxifyre");
     }
 
-    public async Task StartAsync(int socksPort, string localAddr, IReadOnlyList<string> supportedProtocols, string logLevel, IReadOnlyList<string> excludedProcesses, CancellationToken ct = default)
+    public async Task StartAsync(int socksPort, string localAddr, IReadOnlyList<string> supportedProtocols, string logLevel, IReadOnlyList<string> filteredProcesses, ProcessFilterMode filterMode = ProcessFilterMode.ExcludeListed, CancellationToken ct = default)
     {
         if (IsRunning) return;
 
@@ -47,7 +48,7 @@ public class ProxifyreService : IDisposable
         if (!File.Exists(proxyPath))
             throw new FileNotFoundException("ProxiFyre.exe not found. Place it in Tools/proxifyre/.", proxyPath);
 
-        WriteProxifyreConfig(proxyDir, socksPort, localAddr, supportedProtocols, logLevel, excludedProcesses);
+        WriteProxifyreConfig(proxyDir, socksPort, localAddr, supportedProtocols, logLevel, filteredProcesses, filterMode);
 
         _proxyProcess = new Process
         {
@@ -118,16 +119,39 @@ public class ProxifyreService : IDisposable
         LogReceived?.Invoke(line);
     }
 
-    internal void WriteProxifyreConfig(string proxyDir, int socksPort, string localAddr, IReadOnlyList<string> supportedProtocols, string logLevel, IReadOnlyList<string> excludedProcesses)
+    internal void WriteProxifyreConfig(string proxyDir, int socksPort, string localAddr, IReadOnlyList<string> supportedProtocols, string logLevel, IReadOnlyList<string> filteredProcesses, ProcessFilterMode filterMode = ProcessFilterMode.ExcludeListed)
     {
         var configPath = Path.Combine(proxyDir, "app-config.json");
+        var tmpPath = configPath + ".tmp";
 
-        var excludes = new List<string> { "trojan.exe" };
-        foreach (var p in excludedProcesses)
+        // Canonical binary names that must always be in excludes (de-duped case-insensitively)
+        var canonicalBinaries = new[] { "trojan.exe", "trojan-go.exe" };
+
+        List<string> appNames;
+        List<string> excludes;
+
+        if (filterMode == ProcessFilterMode.IncludeOnlyListed)
         {
-            var name = p.Trim();
-            if (!string.IsNullOrEmpty(name) && !excludes.Contains(name, StringComparer.OrdinalIgnoreCase))
-                excludes.Add(name);
+            // appNames = user list; excludes = only the two canonical binaries
+            appNames = filteredProcesses
+                .Select(p => p.Trim())
+                .Where(p => !string.IsNullOrEmpty(p))
+                .ToList();
+
+            excludes = new List<string>(canonicalBinaries);
+        }
+        else
+        {
+            // ExcludeListed (default): appNames = catch-all; excludes = binaries + user list
+            appNames = new List<string> { "" };
+
+            excludes = new List<string>(canonicalBinaries);
+            foreach (var p in filteredProcesses)
+            {
+                var name = p.Trim();
+                if (!string.IsNullOrEmpty(name) && !excludes.Contains(name, StringComparer.OrdinalIgnoreCase))
+                    excludes.Add(name);
+            }
         }
 
         var sb = new StringBuilder();
@@ -135,7 +159,15 @@ public class ProxifyreService : IDisposable
         sb.AppendLine($"  \"logLevel\": \"{EscapeJson(logLevel)}\",");
         sb.AppendLine("  \"proxies\": [");
         sb.AppendLine("    {");
-        sb.AppendLine("      \"appNames\": [\"\"],");
+
+        sb.Append("      \"appNames\": [");
+        for (int i = 0; i < appNames.Count; i++)
+        {
+            if (i > 0) sb.Append(',');
+            sb.Append($"\"{EscapeJson(appNames[i])}\"");
+        }
+        sb.AppendLine("],");
+
         sb.AppendLine("      \"username\": \"\",");
         sb.AppendLine("      \"password\": \"\",");
         sb.AppendLine($"      \"socks5ProxyEndpoint\": \"{EscapeJson(localAddr)}:{socksPort}\",");
@@ -161,7 +193,8 @@ public class ProxifyreService : IDisposable
 
         sb.AppendLine("}");
 
-        File.WriteAllText(configPath, sb.ToString(), System.Text.Encoding.UTF8);
+        File.WriteAllText(tmpPath, sb.ToString(), System.Text.Encoding.UTF8);
+        File.Move(tmpPath, configPath, overwrite: true);
     }
 
     internal static string EscapeJson(string s)

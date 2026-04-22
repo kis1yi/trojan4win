@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using Avalonia.Data.Converters;
+using trojan4win.Models;
 using trojan4win.ViewModels;
 
 namespace trojan4win.Converters;
@@ -46,8 +47,8 @@ public class PingToStringConverter : IValueConverter
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is int ping)
-            return ping < 0 ? "—" : $"{ping} ms";
-        return "—";
+            return ping < 0 ? "ï¿½" : $"{ping} ms";
+        return "ï¿½";
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
@@ -99,9 +100,31 @@ public class BoolToPasswordCharConverter : IValueConverter
     {
         if (value is bool visible && visible)
             return '\0';
-        return '•';
+        return 'ï¿½';
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
         => throw new NotSupportedException();
+}
+/// <summary>
+/// Converts a ProcessFilterMode enum value to bool by comparing against the ConverterParameter.
+/// Used to bind RadioButton.IsChecked to FilterMode.
+/// Parameter must be the string name of the enum value (e.g., "ExcludeListed").
+/// </summary>
+public class EnumEqualsBoolConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is ProcessFilterMode mode && parameter is string target)
+            return mode.ToString() == target;
+        return false;
+    }
+
+    public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is bool isChecked && isChecked && parameter is string target
+            && Enum.TryParse<ProcessFilterMode>(target, out var result))
+            return result;
+        return Avalonia.Data.BindingOperations.DoNothing;
+    }
 }

@@ -6,6 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
 using trojan4win;
+using trojan4win.Models;
 using trojan4win.Services;
 using trojan4win.ViewModels;
 using Xunit;
@@ -170,6 +171,34 @@ public sealed class UITests : IDisposable
 
         Assert.False(vm.IsConnected);
         Assert.Equal("Disconnected", vm.StatusText);
+
+        window.Close();
+    }
+
+    // ── FilterMode toggle changes ProcessListLabel binding ────────────────────
+
+    [AvaloniaFact]
+    public void FilterMode_Toggle_BindingUpdatesProcessListLabel()
+    {
+        using var vm = new MainViewModel();
+        var window = new MainWindow { DataContext = vm };
+        window.Show();
+
+        // Navigate to the proxy page so the Proxy Settings subtree is live
+        vm.NavigateToCommand.Execute("proxy");
+
+        // Capture label text in ExcludeListed mode (initial default)
+        vm.FilterMode = ProcessFilterMode.ExcludeListed;
+        var labelBefore = vm.ProcessListLabel;
+
+        // Flip to IncludeOnlyListed
+        vm.FilterMode = ProcessFilterMode.IncludeOnlyListed;
+        var labelAfter = vm.ProcessListLabel;
+
+        // The label text must have changed when FilterMode changed
+        Assert.NotEqual(labelBefore, labelAfter);
+        Assert.Equal("Processes that bypass the proxy", labelBefore);
+        Assert.Equal("Processes routed through the proxy", labelAfter);
 
         window.Close();
     }

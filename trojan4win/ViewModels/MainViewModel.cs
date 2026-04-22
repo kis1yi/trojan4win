@@ -43,7 +43,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         foreach (var s in _settings.Servers)
             Servers.Add(s);
 
-        ExcludedProcesses = new ObservableCollection<string>(_settings.ExcludedProcesses);
+        FilteredProcesses = new ObservableCollection<string>(_settings.FilteredProcesses);
         LocalSocksPort = _settings.LocalSocksPort;
         LocalAddr = _settings.LocalAddr;
         ProxySupportTcp = _settings.SupportedProtocols.Contains("TCP");
@@ -52,6 +52,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
         AutoStart = _settings.AutoStart;
         AutoConnect = _settings.AutoConnect;
         MinimizeToTray = _settings.MinimizeToTray;
+        _filterMode = _settings.FilterMode;
 
         if (_settings.LastSelectedServerId != null)
             SelectedServer = Servers.FirstOrDefault(s => s.Id == _settings.LastSelectedServerId);
@@ -155,8 +156,17 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [ObservableProperty] private bool _autoStart;
     [ObservableProperty] private bool _autoConnect;
     [ObservableProperty] private bool _minimizeToTray = true;
-    public ObservableCollection<string> ExcludedProcesses { get; set; }
-    [ObservableProperty] private string _newExcludedProcess = "";
+    public ObservableCollection<string> FilteredProcesses { get; set; }
+    [ObservableProperty] private string _newFilteredProcess = "";
+    [ObservableProperty] private ProcessFilterMode _filterMode = ProcessFilterMode.ExcludeListed;
+
+    public string ProcessListLabel => FilterMode == ProcessFilterMode.ExcludeListed
+        ? "Processes that bypass the proxy"
+        : "Processes routed through the proxy";
+
+    public string ProcessListHelpText => FilterMode == ProcessFilterMode.ExcludeListed
+        ? "Traffic from these processes will NOT be redirected through the SOCKS proxy."
+        : "Only traffic from these processes will be redirected through the SOCKS proxy.";
 
     // --- ComboBox Sources ---
     public List<string> TrojanLogLevelOptions { get; } = new() { "All", "Info", "Warn", "Error", "Fatal", "Off" };
@@ -188,6 +198,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
             TotalBytesDown = 0;
             TotalSeconds = 0;
         }
+    }
+
+    partial void OnFilterModeChanged(ProcessFilterMode value)
+    {
+        _settings.FilterMode = value;
+        SaveSettings();
+        OnPropertyChanged(nameof(ProcessListLabel));
+        OnPropertyChanged(nameof(ProcessListHelpText));
     }
 
     partial void OnAutoStartChanged(bool value)
@@ -277,7 +295,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
             var protocols = new List<string>();
             if (ProxySupportTcp) protocols.Add("TCP");
             if (ProxySupportUdp) protocols.Add("UDP");
-            await _proxifyre.StartAsync(LocalSocksPort, LocalAddr, protocols, ProxyLogLevel, ExcludedProcesses.ToList(), _connectCts.Token);
+            await _proxifyre.StartAsync(LocalSocksPort, LocalAddr, protocols, ProxyLogLevel, FilteredProcesses.ToList(), _settings.FilterMode, _connectCts.Token);
 
             _trafficMonitor.Start();
 
@@ -539,23 +557,23 @@ public partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    // --- Proxy Exclusions ---
+    // --- Proxy Filtering ---
     [RelayCommand]
-    private void AddExcludedProcess()
+    private void AddFilteredProcess()
     {
-        var name = NewExcludedProcess?.Trim();
-        if (string.IsNullOrWhiteSpace(name) || ExcludedProcesses.Contains(name)) return;
-        ExcludedProcesses.Add(name);
-        NewExcludedProcess = "";
-        _settings.ExcludedProcesses = ExcludedProcesses.ToList();
+        var name = NewFilteredProcess?.Trim();
+        if (string.IsNullOrWhiteSpace(name) || FilteredProcesses.Contains(name)) return;
+        FilteredProcesses.Add(name);
+        NewFilteredProcess = "";
+        _settings.FilteredProcesses = FilteredProcesses.ToList();
         SaveSettings();
     }
 
     [RelayCommand]
-    private void RemoveExcludedProcess(string name)
+    private void RemoveFilteredProcess(string name)
     {
-        ExcludedProcesses.Remove(name);
-        _settings.ExcludedProcesses = ExcludedProcesses.ToList();
+        FilteredProcesses.Remove(name);
+        _settings.FilteredProcesses = FilteredProcesses.ToList();
         SaveSettings();
     }
 
@@ -607,7 +625,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private void SaveSettings()
     {
         _settings.Servers = Servers.ToList();
-        _settings.ExcludedProcesses = ExcludedProcesses.ToList();
+        _settings.FilteredProcesses = FilteredProcesses.ToList();
         _settings.LocalSocksPort = LocalSocksPort;
         _settings.LocalAddr = LocalAddr;
         _settings.ProxyLogLevel = ProxyLogLevel;
