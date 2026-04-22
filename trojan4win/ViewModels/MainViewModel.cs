@@ -290,7 +290,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
             if (ProxySupportUdp) protocols.Add("UDP");
             await _proxifyre.StartAsync(LocalSocksPort, LocalAddr, protocols, ProxyLogLevel, FilteredProcesses.ToList(), _settings.FilterMode, _connectCts.Token);
 
-            _trafficMonitor.Start();
+            // Per-PID accounting: only bytes flowing through the trojan-go process
+            // are counted, so ProxiFyre filter settings (whitelist/blacklist) are
+            // honored implicitly — non-proxified app traffic never enters trojan-go.
+            _trafficMonitor.Start(_trojan.Pid ?? 0);
 
             IsConnected = true;
             StatusText = $"Connected to {SelectedServer.Name}";

@@ -20,6 +20,8 @@ public class TrojanService : IDisposable
 
     public bool IsRunning => _trojanProcess is { HasExited: false };
 
+    public int? Pid => _trojanProcess is { HasExited: false } p ? p.Id : null;
+
     public string GetLogs()
     {
         lock (_logLock)

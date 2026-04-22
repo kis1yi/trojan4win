@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Threading;
 using trojan4win.Services;
 using Xunit;
@@ -16,7 +17,7 @@ public sealed class TrafficMonitorTests : IDisposable
     [Fact]
     public void AfterStart_AllCountersAreZero()
     {
-        _monitor.Start();
+        _monitor.Start(Process.GetCurrentProcess().Id);
 
         Assert.Equal(0L, _monitor.SessionBytesUp);
         Assert.Equal(0L, _monitor.SessionBytesDown);
@@ -27,7 +28,7 @@ public sealed class TrafficMonitorTests : IDisposable
     [Fact]
     public void AfterStart_SessionDurationIsNonNegative()
     {
-        _monitor.Start();
+        _monitor.Start(Process.GetCurrentProcess().Id);
         Assert.True(_monitor.SessionDuration >= TimeSpan.Zero);
     }
 
@@ -36,7 +37,7 @@ public sealed class TrafficMonitorTests : IDisposable
     [Fact]
     public void AfterStop_SpeedsAreZero()
     {
-        _monitor.Start();
+        _monitor.Start(Process.GetCurrentProcess().Id);
         _monitor.Stop();
 
         Assert.Equal(0L, _monitor.SpeedUp);
@@ -53,7 +54,7 @@ public sealed class TrafficMonitorTests : IDisposable
     [Fact]
     public void Stop_CalledTwice_IsIdempotentAndDoesNotThrow()
     {
-        _monitor.Start();
+        _monitor.Start(Process.GetCurrentProcess().Id);
         _monitor.Stop();
 
         var ex = Record.Exception(() => _monitor.Stop());
@@ -66,7 +67,7 @@ public sealed class TrafficMonitorTests : IDisposable
         bool fired = false;
         _monitor.Updated += () => fired = true;
 
-        _monitor.Start();
+        _monitor.Start(Process.GetCurrentProcess().Id);
         _monitor.Stop();
 
         Assert.True(fired, "Stop() must fire the Updated event (CR-08/CR-09)");
@@ -77,7 +78,7 @@ public sealed class TrafficMonitorTests : IDisposable
     [Fact]
     public void Dispose_SpeedsAreZeroAfterwards()
     {
-        _monitor.Start();
+        _monitor.Start(Process.GetCurrentProcess().Id);
         _monitor.Dispose();
 
         Assert.Equal(0L, _monitor.SpeedUp);
@@ -91,7 +92,7 @@ public sealed class TrafficMonitorTests : IDisposable
         bool fired = false;
         _monitor.Updated += () => fired = true;
 
-        _monitor.Start();
+        _monitor.Start(Process.GetCurrentProcess().Id);
         _monitor.Dispose(); // should call Stop() internally
 
         Assert.True(fired, "Dispose() must fire Updated via Stop() (CR-18)");
@@ -100,7 +101,7 @@ public sealed class TrafficMonitorTests : IDisposable
     [Fact]
     public void Dispose_CalledTwice_DoesNotThrow()
     {
-        _monitor.Start();
+        _monitor.Start(Process.GetCurrentProcess().Id);
         _monitor.Dispose();
 
         var ex = Record.Exception(() => _monitor.Dispose());
@@ -112,9 +113,9 @@ public sealed class TrafficMonitorTests : IDisposable
     [Fact]
     public void Restart_ResetsCounters()
     {
-        _monitor.Start();
+        _monitor.Start(Process.GetCurrentProcess().Id);
         _monitor.Stop();
-        _monitor.Start(); // second Start must reset everything
+        _monitor.Start(Process.GetCurrentProcess().Id); // second Start must reset everything
 
         Assert.Equal(0L, _monitor.SessionBytesUp);
         Assert.Equal(0L, _monitor.SessionBytesDown);
