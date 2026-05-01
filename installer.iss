@@ -3,7 +3,7 @@
 ; Then compile this script with Inno Setup
 
 #define MyAppName "trojan4win"
-#define MyAppVersion "1.1.0"
+#define MyAppVersion "1.1.1"
 #define MyAppPublisher "trojan4win"
 #define MyAppExeName "trojan4win.exe"
 
