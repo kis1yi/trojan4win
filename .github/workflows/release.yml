@@ -10,7 +10,7 @@ on:
         type: string
 
 env:
-  TROJAN_URL: https://github.com/kis1yi/trojan-go/releases/download/v1.1.7/trojan-go-windows-amd64.zip
+  TROJAN_URL: https://github.com/kis1yi/trojan-go/releases/download/v1.2.0/trojan-go-windows-amd64.zip
   GEOIP_URL: https://github.com/v2fly/geoip/releases/latest/download/geoip.dat
   GEOSITE_URL: https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat
   PROXIFYRE_URL: https://github.com/wiresock/proxifyre/releases/download/v2.2.0/ProxiFyre-v2.2.0-x64-signed.zip

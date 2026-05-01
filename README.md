@@ -120,7 +120,7 @@ manually before building locally. The GitHub Actions CI workflow downloads them 
 
 | Tool | Version | Download | Destination |
 |---|---|---|---|
-| trojan-go | 1.1.7 | [trojan-go-windows-amd64.zip](https://github.com/kis1yi/trojan-go/releases/tag/v1.1.7) | `trojan4win/Tools/trojan/` |
+| trojan-go | 1.2.0 | [trojan-go-windows-amd64.zip](https://github.com/kis1yi/trojan-go/releases/tag/v1.2.0) | `trojan4win/Tools/trojan/` |
 | geoip.dat | latest | [geoip.dat](https://github.com/v2fly/geoip/releases/latest) — from v2fly/geoip; placed next to trojan-go.exe by CI | `trojan4win/Tools/trojan/` |
 | geosite.dat | latest | [dlc.dat](https://github.com/v2fly/domain-list-community/releases/latest) — from v2fly/domain-list-community, saved as geosite.dat by CI | `trojan4win/Tools/trojan/` |
 | ProxiFyre | 2.2.0 | [ProxiFyre-v2.2.0-x64-signed.zip](https://github.com/wiresock/proxifyre/releases/tag/v2.2.0) | `trojan4win/Tools/proxifyre/` |
