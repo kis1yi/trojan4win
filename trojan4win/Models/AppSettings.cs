@@ -6,6 +6,7 @@ namespace trojan4win.Models;
 public class AppSettings
 {
     public List<ServerConfig> Servers { get; set; } = new();
+    public List<SubscriptionConfig> Subscriptions { get; set; } = new();
     public string? LastSelectedServerId { get; set; }
     public bool AutoStart { get; set; }
     public bool AutoConnect { get; set; }

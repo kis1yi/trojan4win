@@ -35,7 +35,16 @@ public static class SettingsService
             if (File.Exists(settingsFile))
             {
                 var json = File.ReadAllText(settingsFile);
-                return JsonSerializer.Deserialize<Models.AppSettings>(json, JsonOpts) ?? new Models.AppSettings();
+                var settings = JsonSerializer.Deserialize<Models.AppSettings>(json, JsonOpts)
+                    ?? new Models.AppSettings();
+                settings.Servers ??= new();
+                settings.Subscriptions ??= new();
+                foreach (var subscription in settings.Subscriptions)
+                {
+                    subscription.Servers ??= new();
+                    subscription.Headers ??= new(StringComparer.OrdinalIgnoreCase);
+                }
+                return settings;
             }
         }
         catch

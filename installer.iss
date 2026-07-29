@@ -3,8 +3,8 @@
 ; Then compile this script with Inno Setup
 
 #define MyAppName "trojan4win"
-#define MyAppVersion "1.1.2"
-#define MyAppPublisher "trojan4win"
+#define MyAppVersion "1.2.0"
+#define MyAppPublisher "kis1yi"
 #define MyAppExeName "trojan4win.exe"
 
 ; NDISAPI / Windows Packet Filter bundled MSI

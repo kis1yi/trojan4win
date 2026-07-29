@@ -3,6 +3,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="using:trojan4win.ViewModels"
+        xmlns:models="using:trojan4win.Models"
         xmlns:conv="using:trojan4win.Converters"
         mc:Ignorable="d" d:DesignWidth="680" d:DesignHeight="520"
         x:Class="trojan4win.MainWindow"
@@ -222,7 +223,8 @@
                                     </TextBlock.Text>
                                 </TextBlock>
                                 </StackPanel>
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="6">
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center"
+                                        Orientation="Horizontal" Spacing="6">
                                 <Button Classes="btn-green" Command="{Binding ConnectCommand}"
                                         IsVisible="{Binding IsConnected, Converter={StaticResource InvBool}}"
                                         IsEnabled="{Binding IsConnecting, Converter={StaticResource InvBool}}"
@@ -232,8 +234,20 @@
                                 <Button Classes="btn-red" Command="{Binding DisconnectCommand}"
                                         IsVisible="{Binding IsConnected}"
                                         Content="Disconnect"
-                                        Background="#BF4040" Foreground="White"
-                                        FontWeight="SemiBold" Padding="20,8" CornerRadius="6"/>
+                                         Background="#BF4040" Foreground="White"
+                                         FontWeight="SemiBold" Padding="20,8" CornerRadius="6"/>
+                                <Button Content="Add" Background="#45475A" Foreground="#CDD6F4"
+                                        FontWeight="SemiBold" Padding="20,8" CornerRadius="6">
+                                    <Button.Flyout>
+                                        <MenuFlyout>
+                                            <MenuItem Header="Add Server" Command="{Binding AddServerCommand}"/>
+                                            <MenuItem Header="From JSON" Command="{Binding ImportConfigCommand}"/>
+                                            <MenuItem Header="From URI" Command="{Binding OpenImportUriCommand}"/>
+                                            <Separator/>
+                                            <MenuItem Header="Add Subscription" Command="{Binding AddSubscriptionCommand}"/>
+                                        </MenuFlyout>
+                                    </Button.Flyout>
+                                </Button>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -267,13 +281,7 @@
 
                     <Border Background="#313244" CornerRadius="8" Padding="16,12">
                         <StackPanel Spacing="6">
-                            <Grid ColumnDefinitions="*,Auto">
-                                <TextBlock Text="Servers" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4"/>
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
-                                    <Button Content="Add" Command="{Binding AddServerCommand}" Background="#45475A" Foreground="#CDD6F4" Padding="10,4" CornerRadius="4"/>
-                                    <Button Content="Import" Command="{Binding ImportConfigCommand}" Background="#45475A" Foreground="#CDD6F4" Padding="10,4" CornerRadius="4"/>
-                                </StackPanel>
-                            </Grid>
+                            <TextBlock Text="Servers" FontWeight="SemiBold" FontSize="13" Foreground="#CDD6F4"/>
 
                             <ListBox Classes="serverlist" ItemsSource="{Binding Servers}" SelectedItem="{Binding SelectedServer}"
                                      Background="Transparent" Margin="0,4"
@@ -304,13 +312,169 @@
                             </ListBox>
 
                             <StackPanel Orientation="Horizontal" Spacing="6">
-                                <Button Content="Edit" Command="{Binding EditServerCommand}" Background="#45475A" Foreground="#CDD6F4" Padding="12,4" CornerRadius="4"/>
-                                <Button Content="Duplicate" Command="{Binding DuplicateServerCommand}" Background="#45475A" Foreground="#CDD6F4" Padding="12,4" CornerRadius="4"/>
-                                <Button Content="Export" Command="{Binding ExportServerCommand}" Background="#45475A" Foreground="#CDD6F4" Padding="12,4" CornerRadius="4"/>
-                                <Button Classes="btn-danger" Content="Remove" Command="{Binding RemoveServerCommand}" Background="#C47A8E" Foreground="#1E1E2E" Padding="12,4" CornerRadius="4"/>
+                                <Button Content="Edit" Command="{Binding EditServerCommand}"
+                                        IsEnabled="{Binding IsManualServerSelected}"
+                                        Background="#45475A" Foreground="#CDD6F4" Padding="12,4" CornerRadius="4"/>
+                                <Button Content="Duplicate" Command="{Binding DuplicateServerCommand}"
+                                        IsEnabled="{Binding IsManualServerSelected}"
+                                        Background="#45475A" Foreground="#CDD6F4" Padding="12,4" CornerRadius="4"/>
+                                <Button Content="Export" Command="{Binding ExportServerCommand}"
+                                        IsEnabled="{Binding IsManualServerSelected}"
+                                        Background="#45475A" Foreground="#CDD6F4" Padding="12,4" CornerRadius="4"/>
+                                <Button Classes="btn-danger" Content="Remove" Command="{Binding RemoveServerCommand}"
+                                        IsEnabled="{Binding IsManualServerSelected}"
+                                        Background="#C47A8E" Foreground="#1E1E2E" Padding="12,4" CornerRadius="4"/>
                             </StackPanel>
                         </StackPanel>
                     </Border>
+
+                    <ItemsControl ItemsSource="{Binding Subscriptions}" x:CompileBindings="False"
+                                  HorizontalAlignment="Stretch">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Background="#313244" CornerRadius="8"
+                                        Margin="0,2" HorizontalAlignment="Stretch"
+                                        ClipToBounds="True">
+                                    <StackPanel>
+                                        <Border Background="#181825" Padding="8,4"
+                                                HorizontalAlignment="Stretch">
+                                            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
+                                                <Button Grid.Column="0" Width="30" Height="30" Padding="0"
+                                                        Background="Transparent" Foreground="#CDD6F4"
+                                                        Command="{Binding $parent[Window].DataContext.ToggleSubscriptionCommand}"
+                                                        CommandParameter="{Binding}" ToolTip.Tip="Collapse or expand servers">
+                                                    <Panel Width="18" Height="18">
+                                                        <PathIcon IsVisible="{Binding IsCollapsed}" Width="16" Height="16"
+                                                                  Foreground="#CDD6F4" Data="M7,4 L15,12 L7,20 Z"/>
+                                                        <PathIcon IsVisible="{Binding IsCollapsed, Converter={StaticResource InvBool}}"
+                                                                  Width="16" Height="16" Foreground="#CDD6F4"
+                                                                  Data="M4,7 L12,15 L20,7 Z"/>
+                                                    </Panel>
+                                                </Button>
+                                                <TextBlock Grid.Column="1" Text="{Binding DisplayTitle}"
+                                                           FontWeight="SemiBold" Foreground="#CDD6F4"
+                                                           VerticalAlignment="Center" Margin="6,0"/>
+                                                <Button Grid.Column="2" Width="30" Height="30" Padding="6"
+                                                        Background="Transparent"
+                                                        Command="{Binding $parent[Window].DataContext.RefreshSubscriptionCommand}"
+                                                        CommandParameter="{Binding}" ToolTip.Tip="Refresh subscription">
+                                                    <PathIcon Foreground="#CDD6F4"
+                                                              Data="M17.65,6.35 C16.2,4.9 14.21,4 12,4 C7.58,4 4,7.58 4,12 C4,16.42 7.58,20 12,20 C15.73,20 18.84,17.45 19.73,14 H17.65 C16.83,16.33 14.61,18 12,18 C8.69,18 6,15.31 6,12 C6,8.69 8.69,6 12,6 C13.66,6 15.14,6.69 16.22,7.78 L13,11 H20 V4 Z"/>
+                                                </Button>
+                                                <Button Grid.Column="3" Width="30" Height="30" Padding="6"
+                                                        Background="Transparent"
+                                                        Command="{Binding $parent[Window].DataContext.EditSubscriptionCommand}"
+                                                        CommandParameter="{Binding}" ToolTip.Tip="Edit subscription">
+                                                    <PathIcon Foreground="#CDD6F4"
+                                                              Data="M3,17.25 V21 H6.75 L17.81,9.94 L14.06,6.19 Z M20.71,7.04 A1,1 0 0 0 20.71,5.63 L18.37,3.29 A1,1 0 0 0 16.96,3.29 L15.13,5.12 L18.88,8.87 Z"/>
+                                                </Button>
+                                                <Button Grid.Column="4" Width="30" Height="30" Padding="6"
+                                                        Background="Transparent"
+                                                        Command="{Binding $parent[Window].DataContext.RemoveSubscriptionCommand}"
+                                                        CommandParameter="{Binding}" ToolTip.Tip="Remove subscription">
+                                                    <PathIcon Foreground="#F38BA8"
+                                                              Data="M6,19 A2,2 0 0 0 8,21 H16 A2,2 0 0 0 18,19 V7 H6 Z M8,9 H16 V19 H8 Z M15.5,4 L14.5,3 H9.5 L8.5,4 H5 V6 H19 V4 Z"/>
+                                                </Button>
+                                            </Grid>
+                                        </Border>
+
+                                        <StackPanel Spacing="8" Margin="16,8">
+                                            <TextBlock Text="{Binding LastUpdatedText}" FontSize="11" Foreground="#A6ADC8"/>
+
+                                            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                                                <Grid Grid.Column="0" Height="26">
+                                                    <ProgressBar Minimum="0" Maximum="100" Value="{Binding TrafficPercent}"
+                                                                 Height="26" Background="#45475A" Foreground="#89B4FA"/>
+                                                    <TextBlock Text="{Binding TrafficText}" FontSize="11"
+                                                               Foreground="#CDD6F4" FontWeight="SemiBold"
+                                                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Grid>
+                                                <TextBlock Grid.Column="1" Text="{Binding ExpireText}" FontSize="11"
+                                                           Foreground="#A6ADC8" VerticalAlignment="Center"
+                                                           IsVisible="{Binding ExpireText, Converter={StaticResource StrNotEmpty}}"/>
+                                                <Button Grid.Column="2" Width="32" Height="30" Padding="6"
+                                                        Background="#45475A"
+                                                        IsVisible="{Binding ProfileWebPageUrl, Converter={StaticResource StrNotEmpty}}"
+                                                        Command="{Binding $parent[Window].DataContext.OpenProfileWebPageCommand}"
+                                                        CommandParameter="{Binding ProfileWebPageUrl}"
+                                                        ToolTip.Tip="Open profile web page">
+                                                    <PathIcon Foreground="#CDD6F4"
+                                                              Data="M12,2 A10,10 0 1 0 12,22 A10,10 0 1 0 12,2 M4.93,8 H8.02 A15.7,15.7 0 0 1 9.1,4.26 A8.03,8.03 0 0 0 4.93,8 M4,12 C4,12.69 4.09,13.36 4.26,14 H7.73 A17.6,17.6 0 0 1 7.73,10 H4.26 A8,8 0 0 0 4,12 M9.1,19.74 A15.7,15.7 0 0 1 8.02,16 H4.93 A8.03,8.03 0 0 0 9.1,19.74 M10.28,16 A13.5,13.5 0 0 0 12,20.46 A13.5,13.5 0 0 0 13.72,16 Z M10,14 H14 A15.5,15.5 0 0 0 14,10 H10 A15.5,15.5 0 0 0 10,14 M12,3.54 A13.5,13.5 0 0 0 10.28,8 H13.72 A13.5,13.5 0 0 0 12,3.54 M14.9,19.74 A8.03,8.03 0 0 0 19.07,16 H15.98 A15.7,15.7 0 0 1 14.9,19.74 M16.27,14 H19.74 A8,8 0 0 0 19.74,10 H16.27 A17.6,17.6 0 0 1 16.27,14 M15.98,8 H19.07 A8.03,8.03 0 0 0 14.9,4.26 A15.7,15.7 0 0 1 15.98,8"/>
+                                                </Button>
+                                            </Grid>
+
+                                            <TextBlock Text="{Binding Announce}" TextWrapping="Wrap"
+                                                       TextAlignment="Center" HorizontalAlignment="Stretch"
+                                                       Foreground="#A6ADC8"
+                                                       IsVisible="{Binding Announce, Converter={StaticResource StrNotEmpty}}"/>
+
+                                            <ListBox Classes="serverlist" ItemsSource="{Binding ServerConfigs}"
+                                                     SelectedItem="{Binding $parent[Window].DataContext.SelectedServer}"
+                                                     Background="Transparent"
+                                                     IsVisible="{Binding IsCollapsed, Converter={StaticResource InvBool}}">
+                                                <ListBox.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Classes="serverItem" CornerRadius="6" Padding="12,8" Margin="0,2">
+                                                            <Grid ColumnDefinitions="*,Auto,Auto">
+                                                                <StackPanel>
+                                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                                               Foreground="#CDD6F4"/>
+                                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                        <TextBlock Text="{Binding Region}" FontSize="11" Foreground="#6C7086"/>
+                                                                        <TextBlock Text="{Binding RemoteAddr}" FontSize="11" Foreground="#6C7086"/>
+                                                                    </StackPanel>
+                                                                </StackPanel>
+                                                                <TextBlock Grid.Column="1" Text="{Binding Ping, Converter={StaticResource PingToStr}}"
+                                                                           Foreground="#A6ADC8" FontSize="11"
+                                                                           VerticalAlignment="Center" Margin="8,0"/>
+                                                                <Button Grid.Column="2" Width="30" Height="30" Padding="6"
+                                                                        Background="Transparent"
+                                                                        Command="{Binding $parent[Window].DataContext.EditSubscriptionServerCommand}"
+                                                                        CommandParameter="{Binding}" ToolTip.Tip="Edit server">
+                                                                    <PathIcon Foreground="#CDD6F4"
+                                                                              Data="M3,17.25 V21 H6.75 L17.81,9.94 L14.06,6.19 Z M20.71,7.04 A1,1 0 0 0 20.71,5.63 L18.37,3.29 A1,1 0 0 0 16.96,3.29 L15.13,5.12 L18.88,8.87 Z"/>
+                                                                </Button>
+                                                            </Grid>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ListBox.ItemTemplate>
+                                            </ListBox>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </ScrollViewer>
+
+            <ScrollViewer IsVisible="{Binding CurrentPage, Converter={StaticResource PageEquals}, ConverterParameter=importUri}">
+                <StackPanel Margin="20,16" Spacing="10">
+                    <TextBlock Text="Import From URI" FontSize="18" FontWeight="SemiBold" Foreground="#CDD6F4"/>
+                    <TextBox Text="{Binding ImportUriText}" AcceptsReturn="True" MinHeight="120"
+                             Watermark="trojan://password@host:443?type=ws#Server"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="Import" Command="{Binding ImportUriCommand}"/>
+                        <Button Content="Cancel" Command="{Binding NavigateToCommand}" CommandParameter="home"/>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+
+            <ScrollViewer IsVisible="{Binding CurrentPage, Converter={StaticResource PageEquals}, ConverterParameter=subscription}">
+                <StackPanel Margin="20,16" Spacing="10">
+                    <TextBlock Text="Subscription" FontSize="18" FontWeight="SemiBold" Foreground="#CDD6F4"/>
+                    <TextBlock Text="URL" Foreground="#A6ADC8"/>
+                    <TextBox Text="{Binding SubscriptionUrl}"/>
+                    <CheckBox Content="Allow Insecure Connection"
+                              IsChecked="{Binding SubscriptionAllowInsecure}"/>
+                    <TextBlock Text="Allows unencrypted HTTP connections and HTTP redirects. HTTPS certificate validation remains enabled."
+                               TextWrapping="Wrap" FontSize="11" Foreground="#A6ADC8"/>
+                    <TextBlock Text="User Agent" Foreground="#A6ADC8"/>
+                    <TextBox Text="{Binding SubscriptionUserAgent}"/>
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="Save" Command="{Binding SaveSubscriptionCommand}"/>
+                        <Button Content="Cancel" Command="{Binding NavigateToCommand}" CommandParameter="home"/>
+                    </StackPanel>
                 </StackPanel>
             </ScrollViewer>
 

@@ -142,7 +142,7 @@ public class ServerConfig : INotifyPropertyChanged
     public string ForwardProxyPassword { get => _forwardProxyPassword; set { _forwardProxyPassword = value; OnPropertyChanged(); } }
 
     // Trojan log level (0=ALL,1=INFO,2=WARN,3=ERROR,4=FATAL,5=OFF)
-    private int _trojanLogLevel = 1;
+    private int _trojanLogLevel = 5;
     public int TrojanLogLevel { get => _trojanLogLevel; set { _trojanLogLevel = value; OnPropertyChanged(); } }
 
     private int _ping = -1;

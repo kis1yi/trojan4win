@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -23,6 +24,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly TrojanService _trojan = new();
     private readonly ProxifyreService _proxifyre = new();
     private readonly TrafficMonitor _trafficMonitor = new();
+    private readonly SubscriptionService _subscriptionService = new();
+    private readonly SubscriptionScheduler _subscriptionScheduler;
     private AppSettings _settings;
     private CancellationTokenSource? _connectCts;
     private DispatcherTimer? _autoPingTimer;
@@ -35,6 +38,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private readonly Action _onProxifyreExited;
     private readonly Action _onTrafficUpdated;
     private readonly EventHandler _onAutoPingTick;  // CR-21: stored for Dispose() unsubscription
+    private readonly Action<SubscriptionConfig, Exception?> _onSubscriptionRefreshCompleted;
 
     public MainViewModel()
     {
@@ -42,6 +46,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         foreach (var s in _settings.Servers)
             Servers.Add(s);
+        foreach (var subscription in _settings.Subscriptions)
+            Subscriptions.Add(subscription);
 
         FilteredProcesses = new ObservableCollection<string>(_settings.FilteredProcesses);
         LocalSocksPort = _settings.LocalSocksPort;
@@ -55,8 +61,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _filterMode = _settings.FilterMode;
 
         if (_settings.LastSelectedServerId != null)
-            SelectedServer = Servers.FirstOrDefault(s => s.Id == _settings.LastSelectedServerId);
-        SelectedServer ??= Servers.FirstOrDefault();
+            SelectedServer = AllServers().FirstOrDefault(s => s.Id == _settings.LastSelectedServerId);
+        SelectedServer ??= AllServers().FirstOrDefault();
 
         // CR-11: assign to named delegates so Dispose() can unsubscribe them
         _onTrojanLog = line => Dispatcher.UIThread.Post(() =>
@@ -100,7 +106,24 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _autoPingTimer.Tick += _onAutoPingTick;
         _autoPingTimer.Start();
         _ = AutoPingAllServersAsync();
+        _onSubscriptionRefreshCompleted = (subscription, failure) =>
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (failure != null)
+                    ErrorMessage = $"Subscription update failed: {failure.Message}";
+                else
+                {
+                    if (SelectedServer != null && !AllServers().Contains(SelectedServer))
+                        SelectedServer = subscription.ServerConfigs.FirstOrDefault() ?? AllServers().FirstOrDefault();
+                    SaveSettings();
+                }
+            });
+        _subscriptionScheduler = new SubscriptionScheduler(
+            _subscriptionService,
+            () => Subscriptions.ToList());
+        _subscriptionScheduler.RefreshCompleted += _onSubscriptionRefreshCompleted;
         _initialized = true;
+        _ = PopulateMissingRegionsAsync();
     }
 
     // --- Connection State ---
@@ -120,7 +143,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     // --- Servers ---
     public ObservableCollection<ServerConfig> Servers { get; } = new();
+    public ObservableCollection<SubscriptionConfig> Subscriptions { get; } = new();
     [ObservableProperty] private ServerConfig? _selectedServer;
+    [ObservableProperty] private SubscriptionConfig? _editingSubscription;
+    [ObservableProperty] private string _subscriptionUrl = "";
+    [ObservableProperty] private bool _subscriptionAllowInsecure;
+    [ObservableProperty] private string _subscriptionUserAgent =
+        $"trojan4win/{ApplicationVersion.DisplayVersion}";
+    [ObservableProperty] private string _importUriText = "";
 
     // --- Editor ---
     [ObservableProperty] private ServerConfig? _editingServer;
@@ -174,9 +204,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     // --- Error Message ---
     [ObservableProperty] private string _errorMessage = "";
+    public bool IsManualServerSelected => SelectedServer != null && Servers.Contains(SelectedServer);
 
     partial void OnSelectedServerChanged(ServerConfig? value)
     {
+        OnPropertyChanged(nameof(IsManualServerSelected));
         if (value != null)
         {
             _settings.LastSelectedServerId = value.Id;
@@ -373,9 +405,134 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
+    private void OpenImportUri()
+    {
+        ImportUriText = "";
+        CurrentPage = "importUri";
+    }
+
+    [RelayCommand]
+    private async Task ImportUriAsync()
+    {
+        try
+        {
+            var server = TrojanUriParser.Parse(ImportUriText);
+            await GeoIpService.PopulateRegionAsync(server);
+            Servers.Add(server);
+            SelectedServer = server;
+            SaveSettings();
+            CurrentPage = "home";
+            ErrorMessage = "";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"URI import failed: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private void AddSubscription()
+    {
+        EditingSubscription = null;
+        SubscriptionUrl = "";
+        SubscriptionAllowInsecure = false;
+        SubscriptionUserAgent = $"trojan4win/{ApplicationVersion.DisplayVersion}";
+        CurrentPage = "subscription";
+    }
+
+    [RelayCommand]
+    private void EditSubscription(SubscriptionConfig subscription)
+    {
+        EditingSubscription = subscription;
+        SubscriptionUrl = subscription.Url;
+        SubscriptionAllowInsecure = subscription.AllowInsecureConnection;
+        SubscriptionUserAgent = subscription.UserAgent;
+        CurrentPage = "subscription";
+    }
+
+    [RelayCommand]
+    private async Task SaveSubscriptionAsync()
+    {
+        var target = EditingSubscription ?? new SubscriptionConfig();
+        var candidate = new SubscriptionConfig
+        {
+            Id = target.Id,
+            Url = SubscriptionUrl.Trim(),
+            AllowInsecureConnection = SubscriptionAllowInsecure,
+            UserAgent = string.IsNullOrWhiteSpace(SubscriptionUserAgent)
+                ? $"trojan4win/{ApplicationVersion.DisplayVersion}"
+                : SubscriptionUserAgent.Trim(),
+            Servers = target.Servers,
+            LastUpdatedUtc = target.LastUpdatedUtc,
+            UpdateIntervalHours = target.UpdateIntervalHours
+        };
+        try
+        {
+            await _subscriptionService.UpdateAsync(candidate);
+            foreach (var item in candidate.Servers)
+                await GeoIpService.PopulateRegionAsync(item.Server);
+            if (EditingSubscription is null)
+                Subscriptions.Add(candidate);
+            else
+            {
+                var index = Subscriptions.IndexOf(EditingSubscription);
+                if (index >= 0) Subscriptions[index] = candidate;
+            }
+            SelectedServer ??= candidate.ServerConfigs.FirstOrDefault();
+            SaveSettings();
+            CurrentPage = "home";
+            ErrorMessage = "";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Subscription could not be saved: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private async Task RefreshSubscriptionAsync(SubscriptionConfig subscription)
+    {
+        await _subscriptionScheduler.RefreshNowAsync(subscription);
+    }
+
+    [RelayCommand]
+    private void ToggleSubscription(SubscriptionConfig subscription)
+    {
+        subscription.IsCollapsed = !subscription.IsCollapsed;
+        SaveSettings();
+    }
+
+    [RelayCommand]
+    private void EditSubscriptionServer(ServerConfig server)
+    {
+        if (!Subscriptions.Any(x => x.ServerConfigs.Contains(server))) return;
+        SelectedServer = server;
+        ErrorMessage = "Changes to a subscription server will be overwritten by the next update.";
+        StartEditing(server);
+        CurrentPage = "edit";
+    }
+
+    [RelayCommand]
+    private void RemoveSubscription(SubscriptionConfig subscription)
+    {
+        var removedSelected = SelectedServer != null && subscription.ServerConfigs.Contains(SelectedServer);
+        Subscriptions.Remove(subscription);
+        if (removedSelected)
+            SelectedServer = AllServers().FirstOrDefault();
+        SaveSettings();
+    }
+
+    [RelayCommand]
+    private void OpenProfileWebPage(string? url)
+    {
+        if (!string.IsNullOrWhiteSpace(url))
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+    }
+
+    [RelayCommand]
     private void DuplicateServer()
     {
-        if (SelectedServer == null) return;
+        if (SelectedServer == null || !Servers.Contains(SelectedServer)) return;
         var clone = SelectedServer.Clone();
         Servers.Add(clone);
         SelectedServer = clone;
@@ -385,7 +542,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void RemoveServer()
     {
-        if (SelectedServer == null) return;
+        if (SelectedServer == null || !Servers.Contains(SelectedServer)) return;
         var idx = Servers.IndexOf(SelectedServer);
         Servers.Remove(SelectedServer);
         SelectedServer = Servers.Count > 0 ? Servers[Math.Min(idx, Servers.Count - 1)] : null;
@@ -395,7 +552,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private void EditServer()
     {
-        if (SelectedServer == null) return;
+        if (SelectedServer == null || !Servers.Contains(SelectedServer)) return;
         StartEditing(SelectedServer);
         CurrentPage = "edit";
     }
@@ -448,6 +605,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         SaveSettings();
         CurrentPage = "home";
+        _ = PopulateAndSaveRegionAsync(EditingServer);
     }
 
     [RelayCommand]
@@ -553,6 +711,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 imported.Id = Guid.NewGuid().ToString();
                 if (string.IsNullOrWhiteSpace(imported.Name))
                     imported.Name = Path.GetFileNameWithoutExtension(path);
+                await GeoIpService.PopulateRegionAsync(imported);
                 Servers.Add(imported);
                 SelectedServer = imported;
                 SaveSettings();
@@ -567,7 +726,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private async Task ExportServerAsync()
     {
-        if (SelectedServer == null) return;
+        if (SelectedServer == null || !Servers.Contains(SelectedServer)) return;
 
         try
         {
@@ -668,6 +827,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     private void SaveSettings()
     {
         _settings.Servers = Servers.ToList();
+        _settings.Subscriptions = Subscriptions.ToList();
         _settings.FilteredProcesses = FilteredProcesses.ToList();
         _settings.LocalSocksPort = LocalSocksPort;
         _settings.LocalAddr = LocalAddr;
@@ -727,7 +887,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     private async Task AutoPingAllServersAsync()
     {
-        foreach (var server in Servers.ToList())
+        foreach (var server in AllServers().ToList())
         {
             if (!string.IsNullOrWhiteSpace(server.RemoteAddr))
             {
@@ -735,6 +895,27 @@ public partial class MainViewModel : ObservableObject, IDisposable
                 server.Ping = ping;
             }
         }
+    }
+
+    private IEnumerable<ServerConfig> AllServers() =>
+        Servers.Concat(Subscriptions.SelectMany(x => x.ServerConfigs));
+
+    private async Task PopulateAndSaveRegionAsync(ServerConfig server)
+    {
+        await GeoIpService.PopulateRegionAsync(server);
+        await Dispatcher.UIThread.InvokeAsync(SaveSettings);
+    }
+
+    private async Task PopulateMissingRegionsAsync()
+    {
+        var changed = false;
+        foreach (var server in AllServers().Where(x => string.IsNullOrWhiteSpace(x.Region)).ToList())
+        {
+            await GeoIpService.PopulateRegionAsync(server);
+            changed |= !string.IsNullOrWhiteSpace(server.Region);
+        }
+        if (changed)
+            await Dispatcher.UIThread.InvokeAsync(SaveSettings);
     }
 
     public void Dispose()
@@ -751,6 +932,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _trojan.ProcessExited -= _onTrojanExited;
         _proxifyre.ProcessExited -= _onProxifyreExited;
         _trafficMonitor.Updated -= _onTrafficUpdated;
+        _subscriptionScheduler.RefreshCompleted -= _onSubscriptionRefreshCompleted;
+        _subscriptionScheduler.Dispose();
+        _subscriptionService.Dispose();
         _trojan.Dispose();
         _proxifyre.Dispose();
         _trafficMonitor.Dispose();

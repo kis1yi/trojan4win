@@ -89,13 +89,13 @@ jobs:
         run: dotnet restore trojan4win.slnx -r win-x64
 
       - name: Build
-        run: dotnet build trojan4win.slnx -c Release --no-restore
+        run: dotnet build trojan4win.slnx -c Release --no-restore -p:Version=${{ github.event.inputs.version }}
 
       - name: Test
         run: dotnet test trojan4win.Tests/trojan4win.Tests.csproj -c Release --no-build --logger "console;verbosity=normal"
 
       - name: Publish
-        run: dotnet publish trojan4win/trojan4win.csproj -c Release -r win-x64 --self-contained --no-restore
+        run: dotnet publish trojan4win/trojan4win.csproj -c Release -r win-x64 --self-contained --no-restore -p:Version=${{ github.event.inputs.version }}
 
       # ── Inno Setup packaging ──────────────────────────────────────────────
       - name: Install Inno Setup

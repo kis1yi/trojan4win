@@ -47,8 +47,8 @@ public class PingToStringConverter : IValueConverter
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         if (value is int ping)
-            return ping < 0 ? "�" : $"{ping} ms";
-        return "�";
+            return ping < 0 ? "– ms" : $"{ping} ms";
+        return "– ms";
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)

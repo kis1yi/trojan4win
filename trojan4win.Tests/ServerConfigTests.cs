@@ -197,7 +197,7 @@ public class ServerConfigTests
         Assert.Equal(0, config.ForwardProxyPort);
         Assert.Equal("", config.ForwardProxyUsername);
         Assert.Equal("", config.ForwardProxyPassword);
-        Assert.Equal(1, config.TrojanLogLevel);
+        Assert.Equal(5, config.TrojanLogLevel);
         Assert.Equal(-1, config.Ping);
     }
 
