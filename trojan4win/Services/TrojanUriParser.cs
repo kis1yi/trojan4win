@@ -45,9 +45,9 @@ public static class TrojanUriParser
             case "curves": server.Curves = value; break;
             case "fingerprint":
             case "fp": server.Fingerprint = value; break;
-            case "ech": server.Ech = Boolean(value, name); break;
-            case "echConfig": server.EchConfig = value; break;
-            case "tfo": server.NoDelay = Boolean(value, name); break;
+            case "echEnabled": server.Ech = Boolean(value, name); break;
+            case "ech": server.EchConfig = value; break;
+            case "tcpNoDelay": server.NoDelay = Boolean(value, name); break;
             case "keepAlive": server.KeepAlive = Boolean(value, name); break;
             case "preferIpv4": server.PreferIpv4 = Boolean(value, name); break;
             case "mux": server.MuxEnabled = Boolean(value, name); break;
@@ -58,7 +58,7 @@ public static class TrojanUriParser
             case "muxProtocol": server.MuxProtocol = Integer(value, name, 1, 2); break;
             case "type":
                 if (value == "ws") server.WebsocketEnabled = true;
-                else if (value is "tcp" or "none") server.WebsocketEnabled = false;
+                else if (value == "tcp") server.WebsocketEnabled = false;
                 else throw new FormatException($"Unsupported value for '{name}'.");
                 break;
             case "path": server.WebsocketPath = value; break;
